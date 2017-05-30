@@ -299,7 +299,7 @@ define(function() {
     setupExit();
     definePrototypes();
 
-    loadAsync("package.json", function(str) {
+/*    loadAsync("package.json", function(str) {
         try {
             var object = JSON.parse(str);
             var icon = object.window.icon || require.toUrl('images/logo.ico');
@@ -309,7 +309,7 @@ define(function() {
         } catch(e) {
         }
     });
-
+*/
 
     return Utils;
 });
