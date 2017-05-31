@@ -122,8 +122,8 @@ define([
 
         Utils.loadAsync(src, function(content) {
             require(['https://jacklehamster.github.io/jsgif/gif.js'],
-                function(JSGif) {
-                    JSGif.parseGIF(new JSGif.Stream(content), gifInfo);
+                function() {
+                    parseGIF(new Stream(content), gifInfo);
                 }
             );
         }, true);
@@ -132,7 +132,7 @@ define([
     }
 
     function initializeGifWorker() {
-        gifWorker = new Worker(require.toUrl("workers/gifworker.js"));
+        gifWorker = new Worker(require.toUrl("dok/workers/gifworker.js"));
         gifWorker.onmessage = function(e) {
            gifWorkerCallbacks[e.data.id] (e.data.cData, e.data.frameInfo);
            delete gifWorkerCallbacks[e.data.id];

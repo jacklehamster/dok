@@ -205,7 +205,7 @@ function( THREE,     Utils,   GifHandler,    Loader,   Packer) {
 
     function getCut(index) {
         var cut = cutArray[index];
-        var frame = cut && cut.animated ? DOK.getGif(cut.url).getFrame() : 0;
+        var frame = cut && cut.animated ? GifHandler.getGif(cut.url).getFrame() : 0;
         if(cut && cut.cut[frame] && cut.cut[frame].ready) {
             return cut.cut[frame];
         }

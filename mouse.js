@@ -53,9 +53,12 @@ define([ 'dok/utils' ], function(Utils) {
     }
     
     function onMove(e) {
+        e = e || event;
         var touches = e.changedTouches;
         if(!touches) {
-            if(e.buttons & 1 && mdown) {
+            var buttonDown = ('buttons' in e) && e.buttons===1 || (e.which || e.button) ===1;
+
+            if(buttonDown && mdown) {
                 var newX = e.pageX;
                 var newY = e.pageY;
                 var dx = newX - spot.x;
