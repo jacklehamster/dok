@@ -132,8 +132,7 @@ define([
     }
 
     function initializeGifWorker() {
-//        gifWorker = new Worker(require.toUrl("workers/gifworker.js"));
-        gifWorker = new Worker('https://jacklehamster.github.io/dok/dist/workers/gifworker.js');
+        gifWorker = new Worker(require.toUrl("workers/gifworker.js"));
         gifWorker.onmessage = function(e) {
            gifWorkerCallbacks[e.data.id] (e.data.cData, e.data.frameInfo);
            delete gifWorkerCallbacks[e.data.id];
