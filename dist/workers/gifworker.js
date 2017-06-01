@@ -1,13 +1,15 @@
-onmessage = function(e) {
+"use strict";
+
+onmessage = function onmessage(e) {
     var frameInfo = e.data.frameInfo;
     var cData = e.data.cData;
     var header = e.data.header;
     var id = e.data.id;
 
-    if(frameInfo && cData && header) {
+    if (frameInfo && cData && header) {
         plasterPixels(frameInfo, cData, header);
     }
-    postMessage({id:id, cData: cData, frameInfo: frameInfo },[cData.data.buffer]);
+    postMessage({ id: id, cData: cData, frameInfo: frameInfo }, [cData.data.buffer]);
 };
 
 function plasterPixels(frameInfo, cData, header) {
@@ -17,10 +19,11 @@ function plasterPixels(frameInfo, cData, header) {
     var disposalMethod = gce.disposalMethod;
 
     var ct = img.lctFlag ? img.lct : header.gct;
-    
-    img.pixels.forEach(function(pixel, i) {
-        if (transparency !== pixel) { // This includes null, if no transparency was defined.
-            cData.data[i * 4    ] = ct[pixel][0];
+
+    img.pixels.forEach(function (pixel, i) {
+        if (transparency !== pixel) {
+            // This includes null, if no transparency was defined.
+            cData.data[i * 4] = ct[pixel][0];
             cData.data[i * 4 + 1] = ct[pixel][1];
             cData.data[i * 4 + 2] = ct[pixel][2];
             cData.data[i * 4 + 3] = 255; // Opaque.
@@ -29,3 +32,4 @@ function plasterPixels(frameInfo, cData, header) {
         }
     });
 }
+//# sourceMappingURL=gifworker.js.map

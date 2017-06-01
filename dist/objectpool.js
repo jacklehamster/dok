@@ -1,6 +1,6 @@
-define([
-    'utils',
-], function(Utils) {
+'use strict';
+
+define(['utils'], function (Utils) {
 
     /**
      *  CLASS DEFINITIONS
@@ -19,7 +19,7 @@ define([
      *  FUNCTION DEFINITIONS
      */
     function create() {
-        if(this.index >= this.pool.length) {
+        if (this.index >= this.pool.length) {
             this.pool.push(new this.classObject());
         }
         return this.pool[this.index++];
@@ -30,14 +30,14 @@ define([
     }
 
     function pool_create(classObject) {
-        if(!classObject.pool) {
+        if (!classObject.pool) {
             classObject.pool = new ObjectPool(classObject);
         }
         return classObject.pool.create();
     }
 
     function pool_recycleAll(classObject) {
-        if(classObject.pool) {
+        if (classObject.pool) {
             classObject.pool.recycleAll();
         }
     }
@@ -50,3 +50,4 @@ define([
 
     return ObjectPool;
 });
+//# sourceMappingURL=objectpool.js.map

@@ -1,8 +1,8 @@
 define([
-    'dok/utils',
-    'dok/spritesheet',
-    'dok/spriteobject',
-    'dok/camera',
+    'utils',
+    'spritesheet',
+    'spriteobject',
+    'camera',
 ], function(Utils, SpriteSheet, SpriteObject, Camera) {
 
     'use strict';

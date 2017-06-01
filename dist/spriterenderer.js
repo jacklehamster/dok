@@ -1,12 +1,6 @@
-define([
-    'threejs',
-    'utils',
-    'spriteobject',
-    'spritesheet',
-    'objectpool',
-    'camera',
-    'turbosort'
-], function(THREE, Utils, SpriteObject, SpriteSheet, ObjectPool, Camera, turboSort) {
+'use strict';
+
+define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'objectpool', 'camera', 'turbosort'], function (THREE, Utils, SpriteObject, SpriteSheet, ObjectPool, Camera, turboSort) {
     'use strict';
 
     var planeGeometry = new THREE.PlaneBufferGeometry(1, 1);
@@ -14,7 +8,7 @@ define([
     var indices = planeGeometry.index.array;
     var spriteRenderers = [];
     var uniforms = null;
-    var indexProcessor = function(){};
+    var indexProcessor = function indexProcessor() {};
 
     /**
      *  CLASS DEFINITIONS
@@ -30,31 +24,26 @@ define([
 
         this.display = function (spriteObject) {
             var image = null;
-            var cut = spriteObject && spriteObject.visible !== false
-                ? SpriteSheet.getCut(spriteObject.img) : null;
+            var cut = spriteObject && spriteObject.visible !== false ? SpriteSheet.getCut(spriteObject.img) : null;
             if (cut && cut.ready) {
                 var index = self.imageCount;
-                if(!self.images[index]) {
+                if (!self.images[index]) {
                     self.images[index] = new SpriteImage();
                     self.images[index].index = index;
                 }
 
                 image = self.images[index];
 
-                for (var j=0; j<indices.length; j++) {
-                    image.indexArray[j] = indices[j] + image.index*4;
+                for (var j = 0; j < indices.length; j++) {
+                    image.indexArray[j] = indices[j] + image.index * 4;
                 }
 
                 var quat = spriteObject.hasQuaternionArray ? spriteObject.quaternionArray : Camera.getCameraQuaternionData().array;
-                if (image.quaternionArray[0] !== quat[0]
-                    || image.quaternionArray[1] !== quat[1]
-                    || image.quaternionArray[2] !== quat[2]
-                    || image.quaternionArray[3] !== quat[3]
-                ) {
+                if (image.quaternionArray[0] !== quat[0] || image.quaternionArray[1] !== quat[1] || image.quaternionArray[2] !== quat[2] || image.quaternionArray[3] !== quat[3]) {
                     image.quaternionArray.set(quat);
-                    image.quaternionArray.set(quat,4);
-                    image.quaternionArray.set(quat,8);
-                    image.quaternionArray.set(quat,12);
+                    image.quaternionArray.set(quat, 4);
+                    image.quaternionArray.set(quat, 8);
+                    image.quaternionArray.set(quat, 12);
                     image.quatDirty = true;
                 }
 
@@ -67,33 +56,28 @@ define([
                     image.positionDirty = true;
                 }
 
-                if (spriteObject.size[0] !== image.size[0]
-                    || spriteObject.size[1] !== image.size[1]
-                    || spriteObject.size[2] !== image.size[2]
-                    || image.positionDirty
-                ) {
+                if (spriteObject.size[0] !== image.size[0] || spriteObject.size[1] !== image.size[1] || spriteObject.size[2] !== image.size[2] || image.positionDirty) {
                     image.size[0] = spriteObject.size[0];
                     image.size[1] = spriteObject.size[1];
                     image.size[2] = spriteObject.size[2];
                     var vertices = planeGeometry.attributes.position.array;
-                    for(var v=0; v<vertices.length; v++) {
-                        image.vertices[v]
-                            = vertices[v] * spriteObject.size[v%3] + image.spotArray[v];
+                    for (var v = 0; v < vertices.length; v++) {
+                        image.vertices[v] = vertices[v] * spriteObject.size[v % 3] + image.spotArray[v];
                     }
                     image.verticesDirty = true;
                 }
 
-                if(image.uv !== cut.uv) {
+                if (image.uv !== cut.uv) {
                     image.uv = cut.uv;
                     image.uvDirty = true;
                 }
 
-                if(image.tex !== cut.tex) {
+                if (image.tex !== cut.tex) {
                     image.tex = cut.tex;
                     image.texDirty = true;
                 }
 
-                if(image.light !== spriteObject.light) {
+                if (image.light !== spriteObject.light) {
                     image.light = spriteObject.light;
                     image.lightDirty = true;
                 }
@@ -150,60 +134,49 @@ define([
 
     function createMesh() {
         var geometry = new THREE.BufferGeometry();
-        var vertices = new Float32Array( [
-            -1.0, -1.0,  1.0,
-            1.0, -1.0,  1.0,
-            1.0,  1.0,  1.0,
-
-            1.0,  1.0,  1.0,
-            -1.0,  1.0,  1.0,
-            -1.0, -1.0,  1.0
-        ] );
-        geometry.addAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
+        var vertices = new Float32Array([-1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0]);
+        geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
         var mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
 
-        Utils.loadAsync(
-            [
-                require.toUrl("glsl/vertex-shader.glsl"),
-                require.toUrl("glsl/fragment-shader.glsl"),
-                require.toUrl("glsl/vertex-shader-common.glsl"),
-            ],
-            function(vertexShader, fragmentShader, vertexShaderCommon) {
-                mesh.material = new THREE.ShaderMaterial( {
-                    uniforms: uniforms = {
-                        texture:  {
-                            type: 'tv',
-                            get value() { return SpriteSheet.getTextures(); }
-                        },
-                        vCam : {
-                            type: "v3",
-                            get value() { return Camera.getCamera().position; }
-                        },
+        Utils.loadAsync([require.toUrl("glsl/vertex-shader.glsl"), require.toUrl("glsl/fragment-shader.glsl"), require.toUrl("glsl/vertex-shader-common.glsl")], function (vertexShader, fragmentShader, vertexShaderCommon) {
+            mesh.material = new THREE.ShaderMaterial({
+                uniforms: uniforms = {
+                    texture: {
+                        type: 'tv',
+                        get value() {
+                            return SpriteSheet.getTextures();
+                        }
                     },
-                    vertexShader: vertexShaderCommon + vertexShader,
-                    fragmentShader: fragmentShader,
-                    transparent:true,
-                    depthWrite: false,
-                    depthTest: true,
-                } );
-            }
-        );
+                    vCam: {
+                        type: "v3",
+                        get value() {
+                            return Camera.getCamera().position;
+                        }
+                    }
+                },
+                vertexShader: vertexShaderCommon + vertexShader,
+                fragmentShader: fragmentShader,
+                transparent: true,
+                depthWrite: false,
+                depthTest: true
+            });
+        });
 
         mesh.frustumCulled = false;
         return mesh;
     }
 
-    function sortImages(images,count) {
+    function sortImages(images, count) {
         var camera = Camera.getCamera();
         for (var i = 0; i < count; i++) {
             images[i].zIndex = -camera.position.distanceToManhattan(images[i].position);
         }
         indexProcessor(images, count);
-        turboSort(images,count,indexFunction);
+        turboSort(images, count, indexFunction);
     }
 
     function setIndexProcessor(fun) {
-        indexProcessor = fun ? fun : function(){};
+        indexProcessor = fun ? fun : function () {};
     }
 
     function indexFunction(a) {
@@ -219,64 +192,45 @@ define([
         var geometry = mesh.geometry;
         if (!geometry.attributes.position || geometry.attributes.position.count < imageCount * pointCount) {
             previousAttribute = geometry.attributes.position;
-            geometry.attributes.position = new THREE.BufferAttribute(
-                new Float32Array(imageCount * pointCount * 3), 3
-            );
-            if(previousAttribute)
-                geometry.attributes.position.copyArray(previousAttribute.array);
+            geometry.attributes.position = new THREE.BufferAttribute(new Float32Array(imageCount * pointCount * 3), 3);
+            if (previousAttribute) geometry.attributes.position.copyArray(previousAttribute.array);
             geometry.attributes.position.setDynamic(true);
         }
         if (!geometry.attributes.spot || geometry.attributes.spot.count < imageCount * pointCount) {
             previousAttribute = geometry.attributes.spot;
-            geometry.attributes.spot = new THREE.BufferAttribute(
-                new Float32Array(imageCount * pointCount * 3), 3
-            );
-            if(previousAttribute)
-                geometry.attributes.spot.copyArray(previousAttribute.array);
+            geometry.attributes.spot = new THREE.BufferAttribute(new Float32Array(imageCount * pointCount * 3), 3);
+            if (previousAttribute) geometry.attributes.spot.copyArray(previousAttribute.array);
             geometry.attributes.spot.setDynamic(true);
         }
         if (!geometry.attributes.quaternion || geometry.attributes.quaternion.count < imageCount * pointCount) {
             previousAttribute = geometry.attributes.quaternion;
-            geometry.attributes.quaternion = new THREE.BufferAttribute(
-                new Float32Array(imageCount * pointCount * 4), 4
-            );
-            if(previousAttribute)
-                geometry.attributes.quaternion.copyArray(previousAttribute.array);
+            geometry.attributes.quaternion = new THREE.BufferAttribute(new Float32Array(imageCount * pointCount * 4), 4);
+            if (previousAttribute) geometry.attributes.quaternion.copyArray(previousAttribute.array);
             geometry.attributes.quaternion.setDynamic(true);
         }
         if (!geometry.attributes.uv || geometry.attributes.uv.count < imageCount * pointCount) {
             previousAttribute = geometry.attributes.uv;
-            geometry.attributes.uv = new THREE.BufferAttribute(
-                new Float32Array(imageCount * pointCount * 2), 2
-            );
-            if(previousAttribute)
-                geometry.attributes.uv.copyArray(previousAttribute.array);
+            geometry.attributes.uv = new THREE.BufferAttribute(new Float32Array(imageCount * pointCount * 2), 2);
+            if (previousAttribute) geometry.attributes.uv.copyArray(previousAttribute.array);
             geometry.attributes.uv.setDynamic(true);
         }
         if (!geometry.attributes.tex || geometry.attributes.tex.count < imageCount * pointCount) {
             previousAttribute = geometry.attributes.tex;
-            geometry.attributes.tex = new THREE.BufferAttribute(
-                new Float32Array(imageCount * pointCount), 1
-            );
-            if(previousAttribute)
-                geometry.attributes.tex.copyArray(previousAttribute.array);
+            geometry.attributes.tex = new THREE.BufferAttribute(new Float32Array(imageCount * pointCount), 1);
+            if (previousAttribute) geometry.attributes.tex.copyArray(previousAttribute.array);
             geometry.attributes.tex.setDynamic(true);
         }
         if (!geometry.attributes.light || geometry.attributes.light.count < imageCount * pointCount) {
             previousAttribute = geometry.attributes.light;
-            geometry.attributes.light = new THREE.BufferAttribute(
-                new Float32Array(imageCount * pointCount), 1
-            );
-            if(previousAttribute)
-                geometry.attributes.light.copyArray(previousAttribute.array);
+            geometry.attributes.light = new THREE.BufferAttribute(new Float32Array(imageCount * pointCount), 1);
+            if (previousAttribute) geometry.attributes.light.copyArray(previousAttribute.array);
             geometry.attributes.light.setDynamic(true);
         }
         if (!geometry.index || geometry.index.count < imageCount * planeGeometry.index.array.length) {
             previousAttribute = geometry.index;
             var indices = planeGeometry.index.array;
             geometry.index = new THREE.BufferAttribute(new Uint16Array(imageCount * indices.length), 1);
-            if(previousAttribute)
-                geometry.index.copyArray(previousAttribute.array);
+            if (previousAttribute) geometry.index.copyArray(previousAttribute.array);
             geometry.index.setDynamic(true);
         }
 
@@ -305,7 +259,7 @@ define([
         var uvChanged = false;
         var lightChanged = false;
 
-        for(var i=0;i<imageCount;i++) {
+        for (var i = 0; i < imageCount; i++) {
             var image = images[i];
             var index = image.index;
 
@@ -347,30 +301,30 @@ define([
             }
         }
 
-        for(i=0;i<imageCount;i++) {
+        for (i = 0; i < imageCount; i++) {
             geo_index.set(imageOrder[i].indexArray, i * 6);
         }
 
-        if(geometry.drawRange.start !== 0 || geometry.drawRange.count !== imageCount*planeGeometry.index.count) {
-            geometry.setDrawRange(0, imageCount*planeGeometry.index.count);
+        if (geometry.drawRange.start !== 0 || geometry.drawRange.count !== imageCount * planeGeometry.index.count) {
+            geometry.setDrawRange(0, imageCount * planeGeometry.index.count);
         }
 
-        if(lightChanged) {
+        if (lightChanged) {
             geometry.attributes.light.needsUpdate = true;
         }
-        if(quatChanged) {
+        if (quatChanged) {
             geometry.attributes.quaternion.needsUpdate = true;
         }
-        if(positionChanged) {
+        if (positionChanged) {
             geometry.attributes.spot.needsUpdate = true;
         }
-        if(verticesChanged) {
+        if (verticesChanged) {
             geometry.attributes.position.needsUpdate = true;
         }
-        if(texChanged) {
+        if (texChanged) {
             geometry.attributes.tex.needsUpdate = true;
         }
-        if(uvChanged) {
+        if (uvChanged) {
             geometry.attributes.uv.needsUpdate = true;
         }
         geometry.index.needsUpdate = true;
@@ -378,14 +332,14 @@ define([
     }
 
     function destroyEverything() {
-        for(var i=0; i<spriteRenderers.length; i++) {
+        for (var i = 0; i < spriteRenderers.length; i++) {
             spriteRenderers[i].destroy();
         }
         spriteRenderers.length = 0;
     }
 
     function destroySprite() {
-        if(this.mesh) {
+        if (this.mesh) {
             this.mesh.geometry.dispose();
             this.mesh.material.dispose();
         }
@@ -404,6 +358,6 @@ define([
      *   PROCESSES
      */
 
-
     return SpriteRenderer;
- });
+});
+//# sourceMappingURL=spriterenderer.js.map

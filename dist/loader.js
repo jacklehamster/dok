@@ -1,4 +1,6 @@
-define([ 'utils', 'loop' ], function(Utils, Loop) {
+'use strict';
+
+define(['utils', 'loop'], function (Utils, Loop) {
     'use strict';
 
     var index = 0;
@@ -19,10 +21,10 @@ define([ 'utils', 'loop' ], function(Utils, Loop) {
         document.body.removeChild(getLoadingBar());
     }
 
-    function loadImage(url,onLoad) {
+    function loadImage(url, onLoad) {
         var image = new Image();
-        image.onload = function(event) {
-            onLoad.call(image,event);
+        image.onload = function (event) {
+            onLoad.call(image, event);
             loading--;
             loaded++;
             checkLoad();
@@ -30,28 +32,28 @@ define([ 'utils', 'loop' ], function(Utils, Loop) {
         image.crossOrigin = '';
         imageQueue.push({
             image: image,
-            url: url,
+            url: url
         });
         loadTotal++;
         checkLoad();
         return image;
     }
 
-    function loadFile(url,onLoad) {
+    function loadFile(url, onLoad) {
         loadTotal++;
-        Utils.loadAsync(url, function(result) {
+        Utils.loadAsync(url, function (result) {
             loaded++;
             onLoad(result);
         });
     }
 
     function checkLoad() {
-        while(index<imageQueue.length && loading<loadLimit) {
+        while (index < imageQueue.length && loading < loadLimit) {
             imageQueue[index].image.src = imageQueue[index].url;
             index++;
             loading++;
         }
-        if(index===imageQueue.length) {
+        if (index === imageQueue.length) {
             index = 0;
             imageQueue.length = 0;
             loaded = 0;
@@ -64,39 +66,39 @@ define([ 'utils', 'loop' ], function(Utils, Loop) {
     }
 
     function refreshLoadingBar() {
-        if(loadingBar) {
+        if (loadingBar) {
             var ctx = loadingBar.getContext("2d");
             var actualProgress = getLoadingProgress();
-            visualProgress = Math.max(0,visualProgress + (actualProgress-visualProgress)/10);
-            if(actualProgress>=1) {
+            visualProgress = Math.max(0, visualProgress + (actualProgress - visualProgress) / 10);
+            if (actualProgress >= 1) {
                 visualProgress = 1;
                 Loop.removeLoop(refreshLoadingBar);
             }
-            ctx.fillRect(10,10,(loadingBar.width-20)*visualProgress,loadingBar.height-20);
+            ctx.fillRect(10, 10, (loadingBar.width - 20) * visualProgress, loadingBar.height - 20);
 
-            if(actualProgress>=1) {
-                if(onLoadCallback) {
-                    setTimeout(onLoadCallback,100);
+            if (actualProgress >= 1) {
+                if (onLoadCallback) {
+                    setTimeout(onLoadCallback, 100);
                 }
             }
         }
     }
 
     function getLoadingBar() {
-        if(!loadingBar) {
+        if (!loadingBar) {
             loadingBar = document.createElement("canvas");
             loadingBar.id = "loading";
-            loadingBar.width = Math.round((innerWidth*2)*2/3);
+            loadingBar.width = Math.round(innerWidth * 2 * 2 / 3);
             loadingBar.height = 50;
-            loadingBar.style.left = (innerWidth/2-loadingBar.width/4)+"px";
-            loadingBar.style.top = (innerHeight/2-loadingBar.height/4)+"px";
-            loadingBar.style.width = (loadingBar.width/2) + "px";
-            loadingBar.style.height = (loadingBar.height/2) + "px";
+            loadingBar.style.left = innerWidth / 2 - loadingBar.width / 4 + "px";
+            loadingBar.style.top = innerHeight / 2 - loadingBar.height / 4 + "px";
+            loadingBar.style.width = loadingBar.width / 2 + "px";
+            loadingBar.style.height = loadingBar.height / 2 + "px";
             loadingBar.style.position = "absolute";
             loadingBar.style.backgroundColor = "white";
             loadingBar.style.border = "10px double #00DDDD";
             var ctx = loadingBar.getContext("2d");
-            ctx.fillStyle="#0066aa";
+            ctx.fillStyle = "#0066aa";
             Loop.addLoop(refreshLoadingBar);
         }
         document.body.appendChild(loadingBar);
@@ -110,8 +112,7 @@ define([ 'utils', 'loop' ], function(Utils, Loop) {
     /**
      *  PUBLIC DECLARATIONS
      */
-    function Loader() {
-    }
+    function Loader() {}
 
     Loader.loadImage = loadImage;
     Loader.loadFile = loadFile;
@@ -123,3 +124,4 @@ define([ 'utils', 'loop' ], function(Utils, Loop) {
 
     return Loader;
 });
+//# sourceMappingURL=loader.js.map

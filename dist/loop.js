@@ -1,30 +1,32 @@
-define([ 'utils' ], function(Utils) {
+'use strict';
+
+define(['utils'], function (Utils) {
     'use strict';
 
     var coreLoops = null;
     var frame = 0;
     var fps = 0;
-    var period = Math.floor(1000/60);
+    var period = Math.floor(1000 / 60);
     var nextTime = 0;
     var lastCount = 0;
 
     var frameCount = 0;
-   
+
     /**
     *  FUNCTION DEFINITIONS
     */
     function loop(time) {
-        if(coreLoops) {
-            requestAnimationFrame( loop );
-            if(time<=Loop.time + period) {
+        if (coreLoops) {
+            requestAnimationFrame(loop);
+            if (time <= Loop.time + period) {
                 return;
             }
-            Loop.time = Math.floor(time/period)*period;
-            for(var i=0;coreLoops && i<coreLoops.length;i++)  {
+            Loop.time = Math.floor(time / period) * period;
+            for (var i = 0; coreLoops && i < coreLoops.length; i++) {
                 coreLoops[i]();
             }
-            frameCount ++;
-            if(time-lastCount>1000) {
+            frameCount++;
+            if (time - lastCount > 1000) {
                 fps = frameCount;
                 frameCount = 0;
                 lastCount = time;
@@ -33,7 +35,7 @@ define([ 'utils' ], function(Utils) {
     }
 
     function addLoop(callback) {
-        if(coreLoops===null) {
+        if (coreLoops === null) {
             coreLoops = [];
             beginLoop();
         }
@@ -41,10 +43,10 @@ define([ 'utils' ], function(Utils) {
     }
 
     function removeLoop(callback) {
-        if(coreLoops) {
+        if (coreLoops) {
             var index = coreLoops.indexOf(callback);
             coreLoops.splice(index, 1);
-            if(coreLoops.length===0) {
+            if (coreLoops.length === 0) {
                 coreLoops = null;
             }
         }
@@ -62,7 +64,7 @@ define([ 'utils' ], function(Utils) {
         coreLoops = null;
         frame = 0;
         fps = 0;
-        period = Math.floor(1000/60);
+        period = Math.floor(1000 / 60);
         nextTime = 0;
         lastCount = 0;
         frameCount = 0;
@@ -71,8 +73,7 @@ define([ 'utils' ], function(Utils) {
     /**
     *  PUBLIC DECLARATIONS
     */
-    function Loop() {
-    }
+    function Loop() {}
 
     Loop.addLoop = addLoop;
     Loop.removeLoop = removeLoop;
@@ -81,11 +82,11 @@ define([ 'utils' ], function(Utils) {
     Object.defineProperty(Loop, "fps", {
         enumerable: false,
         configurable: false,
-        get: function () {
+        get: function get() {
             return fps;
         },
-        set: function(value) {
-            period = Math.floor(1000/value);
+        set: function set(value) {
+            period = Math.floor(1000 / value);
         }
     });
 
@@ -95,4 +96,5 @@ define([ 'utils' ], function(Utils) {
     Loop.time = 0;
 
     return Loop;
- });
+});
+//# sourceMappingURL=loop.js.map

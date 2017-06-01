@@ -1,20 +1,21 @@
-define([
-    'threejs', 'loop',
-], function(THREE, Loop) {
+'use strict';
+
+define(['threejs', 'loop'], function (THREE, Loop) {
     'use strict';
 
     var camera;
     var camera2d = new THREE.OrthographicCamera(-innerWidth / 2, innerWidth / 2, innerHeight / 2, -innerHeight / 2, 0.1, 1000000);
     var camera3d = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 1000000);
     var cameraQuaternionData = {
-            array: new Float32Array(4),
-            forwardMovement: new THREE.Vector3(0, 0, 1),
-            version: 0,
-        }, lastQuat = new THREE.Quaternion(), tempQuat = new THREE.Quaternion(),
-        tempQuatArray = new Float32Array(4), upVector = new THREE.Vector3(0, 1, 0);
-    var groundQuat = new THREE.Quaternion().setFromAxisAngle(
-        new THREE.Vector3(1, 0, 0), -Math.PI / 2
-    );
+        array: new Float32Array(4),
+        forwardMovement: new THREE.Vector3(0, 0, 1),
+        version: 0
+    },
+        lastQuat = new THREE.Quaternion(),
+        tempQuat = new THREE.Quaternion(),
+        tempQuatArray = new Float32Array(4),
+        upVector = new THREE.Vector3(0, 1, 0);
+    var groundQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
 
     /**
      *  FUNCTION DEFINITIONS
@@ -23,8 +24,7 @@ define([
         return camera;
     }
 
-    function nop() {
-    }
+    function nop() {}
 
     function setCamera3d(value) {
         if (value && camera !== camera3d) {
@@ -69,7 +69,7 @@ define([
         return {
             'is3d': isCamera3d(),
             'position': camera.position.toArray(),
-            'quaternion': camera.quaternion.toArray(),
+            'quaternion': camera.quaternion.toArray()
         };
     }
 
@@ -89,22 +89,12 @@ define([
 
     function quaternionArrays() {
         var quaternions = {};
-        quaternions.groundQuaternionArray =  new THREE.Quaternion().setFromAxisAngle(
-            new THREE.Vector3(1,0,0), -Math.PI/2
-        ).toArray(new Float32Array(4));
-        quaternions.southQuaternionArray =  new THREE.Quaternion().toArray(new Float32Array(4));
-        quaternions.northQuaternionArray =  new THREE.Quaternion().setFromAxisAngle(
-            new THREE.Vector3(0,1,0), -Math.PI
-        ).toArray(new Float32Array(4));
-        quaternions.westQuaternionArray =  new THREE.Quaternion().setFromAxisAngle(
-            new THREE.Vector3(0,1,0), -Math.PI/2
-        ).toArray(new Float32Array(4));
-        quaternions.eastQuaternionArray =  new THREE.Quaternion().setFromAxisAngle(
-            new THREE.Vector3(0,1,0), Math.PI/2
-        ).toArray(new Float32Array(4));
-        quaternions.ceilingQuaternionArray = new THREE.Quaternion().setFromAxisAngle(
-            new THREE.Vector3(1,0,0), Math.PI/2
-        ).toArray(new Float32Array(4));
+        quaternions.groundQuaternionArray = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2).toArray(new Float32Array(4));
+        quaternions.southQuaternionArray = new THREE.Quaternion().toArray(new Float32Array(4));
+        quaternions.northQuaternionArray = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI).toArray(new Float32Array(4));
+        quaternions.westQuaternionArray = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2).toArray(new Float32Array(4));
+        quaternions.eastQuaternionArray = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2).toArray(new Float32Array(4));
+        quaternions.ceilingQuaternionArray = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2).toArray(new Float32Array(4));
         return quaternions;
     }
 
@@ -123,8 +113,7 @@ define([
     /**
      *  PUBLIC DECLARATIONS
      */
-    function Camera() {
-    }
+    function Camera() {}
 
     Camera.setCamera3d = setCamera3d;
     Camera.isCamera3d = isCamera3d;
@@ -145,3 +134,4 @@ define([
 
     return Camera;
 });
+//# sourceMappingURL=camera.js.map
