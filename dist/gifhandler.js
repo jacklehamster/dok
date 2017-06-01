@@ -1,6 +1,6 @@
 'use strict';
 
-define(['utils', 'loop'], function (Utils, Loop) {
+define(['utils', 'loop', 'gifworkerwrapper'], function (Utils, Loop, gWorker) {
     'use strict';
 
     var gifWorker;
@@ -129,7 +129,8 @@ define(['utils', 'loop'], function (Utils, Loop) {
     }
 
     function initializeGifWorker() {
-        gifWorker = new Worker(require.toUrl("workers/gifworker.js"));
+        gifWorker = gWorker;
+        //        gifWorker = new Worker(require.toUrl("workers/gifworker.js"));
         gifWorker.onmessage = function (e) {
             gifWorkerCallbacks[e.data.id](e.data.cData, e.data.frameInfo);
             delete gifWorkerCallbacks[e.data.id];
