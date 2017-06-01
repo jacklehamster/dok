@@ -164,9 +164,12 @@ define([
 
         Utils.loadAsync(
             [
-                require.toUrl("glsl/vertex-shader.glsl"),
-                require.toUrl("glsl/fragment-shader.glsl"),
-                require.toUrl("glsl/vertex-shader-common.glsl"),
+                'https://jacklehamster.github.io/dok/glsl/fragment-shader.glsl',
+                'https://jacklehamster.github.io/dok/glsl/vertex-shader.glsl',
+                'https://jacklehamster.github.io/dok/glsl/vertex-shader-common.glsl',
+//                require.toUrl("glsl/vertex-shader.glsl"),
+//                require.toUrl("glsl/fragment-shader.glsl"),
+//                require.toUrl("glsl/vertex-shader-common.glsl"),
             ],
             function(vertexShader, fragmentShader, vertexShaderCommon) {
                 mesh.material = new THREE.ShaderMaterial( {
