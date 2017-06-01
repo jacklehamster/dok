@@ -1,0 +1,23 @@
+{
+  "name": "dok",
+  "version": "1.0.0",
+  "description": "Wrapper for THREE.js that helps for making games",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jacklehamster/dok.git"
+  },
+  "keywords": [
+    "threejs",
+    "dobuki"
+  ],
+  "author": "Jack Le Hamster",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jacklehamster/dok/issues"
+  },
+  "homepage": "https://github.com/jacklehamster/dok#readme"
+}
