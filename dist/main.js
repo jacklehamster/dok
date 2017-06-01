@@ -6,7 +6,7 @@ requirejs.config({
         dobuki: 'dobuki',
         jsgif: 'jsgif/gif'
     },
-    urlArgs: "bust=" + Date.now()
+    urlArgs: location.search.match(/\bdebug\b/g) ? "bust=" + Date.now() : ''
 });
 
 require(["dobuki"], function (DOK) {});
