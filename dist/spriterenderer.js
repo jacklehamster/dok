@@ -138,7 +138,7 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'objectpool', 'camera
         geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
         var mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
 
-        Utils.loadAsync(['https://jacklehamster.github.io/dok/glsl/fragment-shader.glsl', 'https://jacklehamster.github.io/dok/glsl/vertex-shader.glsl', 'https://jacklehamster.github.io/dok/glsl/vertex-shader-common.glsl'], function (vertexShader, fragmentShader, vertexShaderCommon) {
+        Utils.loadAsync(['https://jacklehamster.github.io/dok/glsl/vertex-shader.glsl', 'https://jacklehamster.github.io/dok/glsl/fragment-shader.glsl', 'https://jacklehamster.github.io/dok/glsl/vertex-shader-common.glsl'], function (vertexShader, fragmentShader, vertexShaderCommon) {
             mesh.material = new THREE.ShaderMaterial({
                 uniforms: uniforms = {
                     texture: {
