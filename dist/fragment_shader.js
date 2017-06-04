@@ -1,0 +1,8 @@
+"use strict";
+
+define(function () {
+    var code = "\nuniform sampler2D texture[ 16 ];\nvarying vec2 vUv;\nvarying float vTex;\nvarying float vLight;\n\nvoid main() {\n    vec2 uv = vUv;\n\n    int iTex = int(vTex);\n\n    if(iTex==0) {\n        gl_FragColor = texture2D( texture[0],  uv);\n    } else if(iTex==1) {\n        gl_FragColor = texture2D( texture[1],  uv);\n    } else if(iTex==2) {\n        gl_FragColor = texture2D( texture[2],  uv);\n    } else if(iTex==3) {\n        gl_FragColor = texture2D( texture[3],  uv);\n    } else if(iTex==4) {\n        gl_FragColor = texture2D( texture[4],  uv);\n    } else if(iTex==5) {\n        gl_FragColor = texture2D( texture[5],  uv);\n    } else if(iTex==6) {\n        gl_FragColor = texture2D( texture[6],  uv);\n    } else if(iTex==7) {\n        gl_FragColor = texture2D( texture[7],  uv);\n    } else if(iTex==8) {\n        gl_FragColor = texture2D( texture[8],  uv);\n    } else if(iTex==9) {\n        gl_FragColor = texture2D( texture[9],  uv);\n    } else if(iTex==10) {\n        gl_FragColor = texture2D( texture[10],  uv);\n    } else if(iTex==11) {\n        gl_FragColor = texture2D( texture[11],  uv);\n    } else if(iTex==12) {\n        gl_FragColor = texture2D( texture[12],  uv);\n    } else if(iTex==13) {\n        gl_FragColor = texture2D( texture[13],  uv);\n    } else if(iTex==14) {\n        gl_FragColor = texture2D( texture[14],  uv);\n    } else if(iTex==15) {\n        gl_FragColor = texture2D( texture[15],  uv);\n    }\n\n    gl_FragColor.x *= vLight;\n    gl_FragColor.y *= vLight;\n    gl_FragColor.z *= vLight;\n//        gl_FragColor.w *= vLight;\n//    gl_FragColor.w = .5;\n}";
+
+    return code;
+});
+//# sourceMappingURL=fragment_shader.js.map

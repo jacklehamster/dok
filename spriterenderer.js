@@ -5,8 +5,9 @@ define([
     'spritesheet',
     'objectpool',
     'camera',
-    'turbosort'
-], function(THREE, Utils, SpriteObject, SpriteSheet, ObjectPool, Camera, turboSort) {
+    'turbosort',
+    'shader',
+], function(THREE, Utils, SpriteObject, SpriteSheet, ObjectPool, Camera, turboSort, Shader) {
     'use strict';
 
     var planeGeometry = new THREE.PlaneBufferGeometry(1, 1);
@@ -24,7 +25,8 @@ define([
         this.images = [];
         this.imageOrder = [];
         this.imageCount = 0;
-        this.mesh = createMesh();
+        this.mesh = createMesh(this);
+        this.curvature = 0;
 
         var self = this;
 
@@ -148,7 +150,7 @@ define([
         ObjectPool.recycleAll(SpriteObject);
     }
 
-    function createMesh() {
+    function createMesh(spriteRenderer) {
         var geometry = new THREE.BufferGeometry();
         var vertices = new Float32Array( [
             -1.0, -1.0,  1.0,
@@ -162,36 +164,27 @@ define([
         geometry.addAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
         var mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
 
-        Utils.loadAsync(
-            [
-                'https://jacklehamster.github.io/dok/glsl/vertex-shader.glsl',
-                'https://jacklehamster.github.io/dok/glsl/fragment-shader.glsl',
-                'https://jacklehamster.github.io/dok/glsl/vertex-shader-common.glsl',
-
-//                require.toUrl("glsl/vertex-shader.glsl"),
-//                require.toUrl("glsl/fragment-shader.glsl"),
-//                require.toUrl("glsl/vertex-shader-common.glsl"),
-            ],
-            function(vertexShader, fragmentShader, vertexShaderCommon) {
-                mesh.material = new THREE.ShaderMaterial( {
-                    uniforms: uniforms = {
-                        texture:  {
-                            type: 'tv',
-                            get value() { return SpriteSheet.getTextures(); }
-                        },
-                        vCam : {
-                            type: "v3",
-                            get value() { return Camera.getCamera().position; }
-                        },
-                    },
-                    vertexShader: vertexShaderCommon + vertexShader,
-                    fragmentShader: fragmentShader,
-                    transparent:true,
-                    depthWrite: false,
-                    depthTest: true,
-                } );
-            }
-        );
+        mesh.material = new THREE.ShaderMaterial( {
+            uniforms: uniforms = {
+                texture:  {
+                    type: 'tv',
+                    get value() { return SpriteSheet.getTextures(); },
+                },
+                vCam : {
+                    type: "v3",
+                    get value() { return Camera.getCamera().position; },
+                },
+                curvature: {
+                    type: "f",
+                    get value() { return spriteRenderer.curvature || 0; },
+                },
+            },
+            vertexShader: Shader.vertexShader,
+            fragmentShader: Shader.fragmentShader,
+            transparent:true,
+            depthWrite: false,
+            depthTest: true,
+        } );
 
         mesh.frustumCulled = false;
         return mesh;

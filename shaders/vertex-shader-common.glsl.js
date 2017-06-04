@@ -1,3 +1,6 @@
+define(function() {
+    return `
+
 vec3 rotateVectorByQuaternion( in vec3 v, in vec4 q ) {
 
     vec3 dest = vec3( 0.0 );
@@ -36,4 +39,7 @@ vec4 axisAngleToQuaternion( in vec3 axis, in float angle ) {
 
     return dest;
 
-}
+}    
+    
+    `;
+});

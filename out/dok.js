@@ -404,7 +404,9 @@ define('loop',['utils'], function (Utils) {
 //# sourceMappingURL=loop.js.map;
 
 
-define('gifworkerwrapper',[],function () {
+define('gifworker',['utils', 'loop'], function (Utils, Loop) {
+    var gifWorkerCallbacks = {};
+
     function GifWorker() {
         onmessage = function onmessage(e) {
             var frameInfo = e.data.frameInfo;
@@ -444,18 +446,50 @@ define('gifworkerwrapper',[],function () {
     code = code.substring(code.indexOf("{") + 1, code.lastIndexOf("}"));
 
     var blob = new Blob([code], { type: "application/javascript" });
-    var worker = new Worker(URL.createObjectURL(blob));
+    var gifWorker = new Worker(URL.createObjectURL(blob));
 
-    return worker;
+    function initializeGifWorker(gifWorker) {
+        gifWorker.onmessage = function (e) {
+            gifWorkerCallbacks[e.data.id](e.data.cData, e.data.frameInfo);
+            delete gifWorkerCallbacks[e.data.id];
+        };
+    }
+
+    function sendToGifWorker(frameInfo, cData, header, callback) {
+        require(['https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.7.0/js/md5.min.js'], function (md5) {
+            var id = md5(Math.random() + "" + Loop.time);
+            gifWorkerCallbacks[id] = callback;
+            gifWorker.postMessage({
+                frameInfo: frameInfo,
+                cData: cData,
+                header: header,
+                id: id
+            }, [cData.data.buffer]);
+        });
+    }
+
+    initializeGifWorker(gifWorker);
+
+    gifWorker.send = sendToGifWorker;
+
+    function destroyEverything() {
+        if (gifWorker) {
+            gifWorker.terminate();
+        }
+        gifWorker = null;
+        gifWorkerCallbacks = null;
+    }
+
+    Utils.onDestroy(destroyEverything);
+
+    return gifWorker;
 });
-//# sourceMappingURL=gifworkerwrapper.js.map;
+//# sourceMappingURL=gifworker.js.map;
 
 
-define('gifHandler',['utils', 'loop', 'gifworkerwrapper'], function (Utils, Loop, gWorker) {
+define('gifHandler',['utils', 'loop', 'gifworker'], function (Utils, Loop, gifWorker) {
     'use strict';
 
-    var gifWorker;
-    var gifWorkerCallbacks = {};
     var gifs = {};
 
     /**
@@ -514,7 +548,7 @@ define('gifHandler',['utils', 'loop', 'gifworkerwrapper'], function (Utils, Loop
 
                     var self = this;
                     var processNext = this.processNextFrame.bind(this);
-                    sendToGifWorker(frameInfo, cData, this.header, function (cData, frameInfo) {
+                    gifWorker.send(frameInfo, cData, this.header, function (cData, frameInfo) {
                         ctx.putImageData(cData, 0, 0);
                         if (self.callbacks[frameInfo.frame]) {
                             self.callbacks[frameInfo.frame]();
@@ -579,37 +613,7 @@ define('gifHandler',['utils', 'loop', 'gifworkerwrapper'], function (Utils, Loop
         return gifInfo;
     }
 
-    function initializeGifWorker() {
-        gifWorker = gWorker;
-        //        gifWorker = new Worker(require.toUrl("workers/gifworker.js"));
-        gifWorker.onmessage = function (e) {
-            gifWorkerCallbacks[e.data.id](e.data.cData, e.data.frameInfo);
-            delete gifWorkerCallbacks[e.data.id];
-        };
-    }
-
-    function sendToGifWorker(frameInfo, cData, header, callback) {
-        if (!gifWorker) {
-            initializeGifWorker();
-        }
-        require([' https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.7.0/js/md5.min.js'], function (md5) {
-            var id = md5(Math.random() + "" + Loop.time);
-            gifWorkerCallbacks[id] = callback;
-            gifWorker.postMessage({
-                frameInfo: frameInfo,
-                cData: cData,
-                header: header,
-                id: id
-            }, [cData.data.buffer]);
-        });
-    }
-
     function destroyEverything() {
-        if (gifWorker) {
-            gifWorker.terminate();
-        }
-        gifWorker = null;
-        gifWorkerCallbacks = null;
         gifs = {};
     }
 
@@ -952,11 +956,9 @@ define('packer',['utils'], function (Utils) {
 //# sourceMappingURL=packer.js.map;
 
 
-define('gifhandler',['utils', 'loop', 'gifworkerwrapper'], function (Utils, Loop, gWorker) {
+define('gifhandler',['utils', 'loop', 'gifworker'], function (Utils, Loop, gifWorker) {
     'use strict';
 
-    var gifWorker;
-    var gifWorkerCallbacks = {};
     var gifs = {};
 
     /**
@@ -1015,7 +1017,7 @@ define('gifhandler',['utils', 'loop', 'gifworkerwrapper'], function (Utils, Loop
 
                     var self = this;
                     var processNext = this.processNextFrame.bind(this);
-                    sendToGifWorker(frameInfo, cData, this.header, function (cData, frameInfo) {
+                    gifWorker.send(frameInfo, cData, this.header, function (cData, frameInfo) {
                         ctx.putImageData(cData, 0, 0);
                         if (self.callbacks[frameInfo.frame]) {
                             self.callbacks[frameInfo.frame]();
@@ -1080,37 +1082,7 @@ define('gifhandler',['utils', 'loop', 'gifworkerwrapper'], function (Utils, Loop
         return gifInfo;
     }
 
-    function initializeGifWorker() {
-        gifWorker = gWorker;
-        //        gifWorker = new Worker(require.toUrl("workers/gifworker.js"));
-        gifWorker.onmessage = function (e) {
-            gifWorkerCallbacks[e.data.id](e.data.cData, e.data.frameInfo);
-            delete gifWorkerCallbacks[e.data.id];
-        };
-    }
-
-    function sendToGifWorker(frameInfo, cData, header, callback) {
-        if (!gifWorker) {
-            initializeGifWorker();
-        }
-        require([' https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.7.0/js/md5.min.js'], function (md5) {
-            var id = md5(Math.random() + "" + Loop.time);
-            gifWorkerCallbacks[id] = callback;
-            gifWorker.postMessage({
-                frameInfo: frameInfo,
-                cData: cData,
-                header: header,
-                id: id
-            }, [cData.data.buffer]);
-        });
-    }
-
     function destroyEverything() {
-        if (gifWorker) {
-            gifWorker.terminate();
-        }
-        gifWorker = null;
-        gifWorkerCallbacks = null;
         gifs = {};
     }
 
@@ -1762,7 +1734,34 @@ define('turbosort',[],function () {
 //# sourceMappingURL=turbosort.js.map;
 
 
-define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'objectpool', 'camera', 'turbosort'], function (THREE, Utils, SpriteObject, SpriteSheet, ObjectPool, Camera, turboSort) {
+define('shaders/fragment-shader.glsl',[],function () {
+    return "\n    \nuniform sampler2D texture[ 16 ];\nvarying vec2 vUv;\nvarying float vTex;\nvarying float vLight;\n\nvoid main() {\n    vec2 uv = vUv;\n\n    int iTex = int(vTex);\n\n    if(iTex==0) {\n        gl_FragColor = texture2D( texture[0],  uv);\n    } else if(iTex==1) {\n        gl_FragColor = texture2D( texture[1],  uv);\n    } else if(iTex==2) {\n        gl_FragColor = texture2D( texture[2],  uv);\n    } else if(iTex==3) {\n        gl_FragColor = texture2D( texture[3],  uv);\n    } else if(iTex==4) {\n        gl_FragColor = texture2D( texture[4],  uv);\n    } else if(iTex==5) {\n        gl_FragColor = texture2D( texture[5],  uv);\n    } else if(iTex==6) {\n        gl_FragColor = texture2D( texture[6],  uv);\n    } else if(iTex==7) {\n        gl_FragColor = texture2D( texture[7],  uv);\n    } else if(iTex==8) {\n        gl_FragColor = texture2D( texture[8],  uv);\n    } else if(iTex==9) {\n        gl_FragColor = texture2D( texture[9],  uv);\n    } else if(iTex==10) {\n        gl_FragColor = texture2D( texture[10],  uv);\n    } else if(iTex==11) {\n        gl_FragColor = texture2D( texture[11],  uv);\n    } else if(iTex==12) {\n        gl_FragColor = texture2D( texture[12],  uv);\n    } else if(iTex==13) {\n        gl_FragColor = texture2D( texture[13],  uv);\n    } else if(iTex==14) {\n        gl_FragColor = texture2D( texture[14],  uv);\n    } else if(iTex==15) {\n        gl_FragColor = texture2D( texture[15],  uv);\n    }\n\n    gl_FragColor.x *= vLight;\n    gl_FragColor.y *= vLight;\n    gl_FragColor.z *= vLight;\n//        gl_FragColor.w *= vLight;\n//    gl_FragColor.w = .5;\n}\n\n    ";
+});
+//# sourceMappingURL=fragment-shader.glsl.js.map;
+
+
+define('shaders/vertex-shader.glsl',[],function () {
+    return "\n    \nvarying vec2 vUv;\nattribute float tex;\nattribute float light;\nattribute vec3 spot;\nattribute vec4 quaternion;\nvarying float vTex;\nvarying float vLight;\nuniform vec3 vCam;\nuniform float curvature;\n\nvoid main()  {\n    vTex = tex;\n    vUv = uv;\n\n    vec3 newPosition = rotateVectorByQuaternion( position - spot, quaternion ) + spot;\n    vLight = 1.0/ sqrt(500.0 / distance(newPosition, vCam)) * light;\n\n    float dist = distance(newPosition, vCam);\n    newPosition.z = newPosition.z - curvature * (dist*dist)/20000.0;\n\n    vec4 mvPosition = modelViewMatrix * vec4(newPosition, 1.0 );\n    gl_Position = projectionMatrix * mvPosition;\n}    \n\n    ";
+});
+//# sourceMappingURL=vertex-shader.glsl.js.map;
+
+
+define('shaders/vertex-shader-common.glsl',[],function () {
+    return "\n\nvec3 rotateVectorByQuaternion( in vec3 v, in vec4 q ) {\n\n    vec3 dest = vec3( 0.0 );\n\n    float x = v.x, y  = v.y, z  = v.z;\n    float qx = q.x, qy = q.y, qz = q.z, qw = q.w;\n\n    // calculate quaternion * vector\n\n    float ix =  qw * x + qy * z - qz * y,\n          iy =  qw * y + qz * x - qx * z,\n          iz =  qw * z + qx * y - qy * x,\n          iw = -qx * x - qy * y - qz * z;\n\n    // calculate result * inverse quaternion\n\n    dest.x = ix * qw + iw * -qx + iy * -qz - iz * -qy;\n    dest.y = iy * qw + iw * -qy + iz * -qx - ix * -qz;\n    dest.z = iz * qw + iw * -qz + ix * -qy - iy * -qx;\n\n    return dest;\n\n}\n\nvec4 axisAngleToQuaternion( in vec3 axis, in float angle ) {\n\n    vec4 dest = vec4( 0.0 );\n\n    float halfAngle = angle / 2.0,\n          s = sin( halfAngle );\n\n    dest.x = axis.x * s;\n    dest.y = axis.y * s;\n    dest.z = axis.z * s;\n    dest.w = cos( halfAngle );\n\n    return dest;\n\n}    \n    \n    ";
+});
+//# sourceMappingURL=vertex-shader-common.glsl.js.map;
+
+
+define('shader',['shaders/fragment-shader.glsl', 'shaders/vertex-shader.glsl', 'shaders/vertex-shader-common.glsl'], function (fragmentShader, vertexShader, vertexShaderCommon) {
+    return {
+        fragmentShader: fragmentShader,
+        vertexShader: vertexShaderCommon + vertexShader
+    };
+});
+//# sourceMappingURL=shader.js.map;
+
+
+define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'objectpool', 'camera', 'turbosort', 'shader'], function (THREE, Utils, SpriteObject, SpriteSheet, ObjectPool, Camera, turboSort, Shader) {
     'use strict';
 
     var planeGeometry = new THREE.PlaneBufferGeometry(1, 1);
@@ -1780,7 +1779,8 @@ define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'obj
         this.images = [];
         this.imageOrder = [];
         this.imageCount = 0;
-        this.mesh = createMesh();
+        this.mesh = createMesh(this);
+        this.curvature = 0;
 
         var self = this;
 
@@ -1894,34 +1894,38 @@ define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'obj
         ObjectPool.recycleAll(SpriteObject);
     }
 
-    function createMesh() {
+    function createMesh(spriteRenderer) {
         var geometry = new THREE.BufferGeometry();
         var vertices = new Float32Array([-1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0]);
         geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
         var mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
 
-        Utils.loadAsync(['https://jacklehamster.github.io/dok/glsl/vertex-shader.glsl', 'https://jacklehamster.github.io/dok/glsl/fragment-shader.glsl', 'https://jacklehamster.github.io/dok/glsl/vertex-shader-common.glsl'], function (vertexShader, fragmentShader, vertexShaderCommon) {
-            mesh.material = new THREE.ShaderMaterial({
-                uniforms: uniforms = {
-                    texture: {
-                        type: 'tv',
-                        get value() {
-                            return SpriteSheet.getTextures();
-                        }
-                    },
-                    vCam: {
-                        type: "v3",
-                        get value() {
-                            return Camera.getCamera().position;
-                        }
+        mesh.material = new THREE.ShaderMaterial({
+            uniforms: uniforms = {
+                texture: {
+                    type: 'tv',
+                    get value() {
+                        return SpriteSheet.getTextures();
                     }
                 },
-                vertexShader: vertexShaderCommon + vertexShader,
-                fragmentShader: fragmentShader,
-                transparent: true,
-                depthWrite: false,
-                depthTest: true
-            });
+                vCam: {
+                    type: "v3",
+                    get value() {
+                        return Camera.getCamera().position;
+                    }
+                },
+                curvature: {
+                    type: "f",
+                    get value() {
+                        return spriteRenderer.curvature || 0;
+                    }
+                }
+            },
+            vertexShader: Shader.vertexShader,
+            fragmentShader: Shader.fragmentShader,
+            transparent: true,
+            depthWrite: false,
+            depthTest: true
         });
 
         mesh.frustumCulled = false;

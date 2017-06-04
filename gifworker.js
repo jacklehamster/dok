@@ -1,4 +1,6 @@
-define(function() {
+define(['utils', 'loop'], function(Utils, Loop) {
+    var gifWorkerCallbacks = {};
+
     function GifWorker() {
         onmessage = function(e) {
             var frameInfo = e.data.frameInfo;
@@ -37,7 +39,43 @@ define(function() {
     code = code.substring(code.indexOf("{")+1, code.lastIndexOf("}"));
 
     var blob = new Blob([code], {type: "application/javascript"});
-    var worker = new Worker(URL.createObjectURL(blob));
+    var gifWorker = new Worker(URL.createObjectURL(blob));
 
-    return worker;
+    function initializeGifWorker(gifWorker) {
+        gifWorker.onmessage = function(e) {
+            gifWorkerCallbacks[e.data.id] (e.data.cData, e.data.frameInfo);
+            delete gifWorkerCallbacks[e.data.id];
+        }
+    }
+
+    function sendToGifWorker(frameInfo, cData, header, callback) {
+        require(['https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.7.0/js/md5.min.js'],
+            function(md5) {
+                const id = md5(Math.random()+""+Loop.time);
+                gifWorkerCallbacks[id] = callback;
+                gifWorker.postMessage({
+                    frameInfo,
+                    cData,
+                    header,
+                    id
+                }, [cData.data.buffer]);
+            });
+    }
+
+
+    initializeGifWorker(gifWorker);
+
+    gifWorker.send = sendToGifWorker;
+
+    function destroyEverything() {
+        if(gifWorker) {
+            gifWorker.terminate();
+        }
+        gifWorker = null;
+        gifWorkerCallbacks = null;
+    }
+
+    Utils.onDestroy(destroyEverything);
+
+    return gifWorker;
 });

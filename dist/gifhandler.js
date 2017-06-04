@@ -1,10 +1,8 @@
 'use strict';
 
-define(['utils', 'loop', 'gifworkerwrapper'], function (Utils, Loop, gWorker) {
+define(['utils', 'loop', 'gifworker'], function (Utils, Loop, gifWorker) {
     'use strict';
 
-    var gifWorker;
-    var gifWorkerCallbacks = {};
     var gifs = {};
 
     /**
@@ -63,7 +61,7 @@ define(['utils', 'loop', 'gifworkerwrapper'], function (Utils, Loop, gWorker) {
 
                     var self = this;
                     var processNext = this.processNextFrame.bind(this);
-                    sendToGifWorker(frameInfo, cData, this.header, function (cData, frameInfo) {
+                    gifWorker.send(frameInfo, cData, this.header, function (cData, frameInfo) {
                         ctx.putImageData(cData, 0, 0);
                         if (self.callbacks[frameInfo.frame]) {
                             self.callbacks[frameInfo.frame]();
@@ -128,37 +126,7 @@ define(['utils', 'loop', 'gifworkerwrapper'], function (Utils, Loop, gWorker) {
         return gifInfo;
     }
 
-    function initializeGifWorker() {
-        gifWorker = gWorker;
-        //        gifWorker = new Worker(require.toUrl("workers/gifworker.js"));
-        gifWorker.onmessage = function (e) {
-            gifWorkerCallbacks[e.data.id](e.data.cData, e.data.frameInfo);
-            delete gifWorkerCallbacks[e.data.id];
-        };
-    }
-
-    function sendToGifWorker(frameInfo, cData, header, callback) {
-        if (!gifWorker) {
-            initializeGifWorker();
-        }
-        require([' https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.7.0/js/md5.min.js'], function (md5) {
-            var id = md5(Math.random() + "" + Loop.time);
-            gifWorkerCallbacks[id] = callback;
-            gifWorker.postMessage({
-                frameInfo: frameInfo,
-                cData: cData,
-                header: header,
-                id: id
-            }, [cData.data.buffer]);
-        });
-    }
-
     function destroyEverything() {
-        if (gifWorker) {
-            gifWorker.terminate();
-        }
-        gifWorker = null;
-        gifWorkerCallbacks = null;
         gifs = {};
     }
 

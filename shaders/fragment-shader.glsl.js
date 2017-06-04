@@ -1,3 +1,6 @@
+define(function() {
+    return `
+    
 uniform sampler2D texture[ 16 ];
 varying vec2 vUv;
 varying float vTex;
@@ -48,3 +51,6 @@ void main() {
 //        gl_FragColor.w *= vLight;
 //    gl_FragColor.w = .5;
 }
+
+    `;
+});
