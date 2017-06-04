@@ -2489,7 +2489,7 @@ requirejs.config({
         dobuki: 'dobuki',
         jsgif: 'jsgif/gif'
     },
-    urlArgs: location.search.match(/\bdebug\b/g) ? "bust=" + Date.now() : ''
+    urlArgs: location.search.match(/\bdebug\b|\bdisable_cache\b/g) ? "time=" + Date.now() : ''
 });
 
 require(["dobuki"], function (DOK) {});
