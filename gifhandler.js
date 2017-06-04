@@ -2,7 +2,8 @@ define([
     'utils',
     'loop',
     'gifworker',
-], function(Utils, Loop, gifWorker) {
+    'jsgif/gif',
+], function(Utils, Loop, gifWorker, JSGif) {
     'use strict';
 
     var gifs = {};
@@ -120,11 +121,7 @@ define([
         };
 
         Utils.loadAsync(src, function(content) {
-            require(['https://jacklehamster.github.io/jsgif/gif.js'],
-                function() {
-                    parseGIF(new Stream(content), gifInfo);
-                }
-            );
+            JSGif.parseGIF(new JSGif.Stream(content), gifInfo);
         }, true);
 
         return gifInfo;

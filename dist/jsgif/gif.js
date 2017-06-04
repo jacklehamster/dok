@@ -1,34 +1,38 @@
-define(function() {
-// Generic functions
-    var bitsToNum = function(ba) {
-        return ba.reduce(function(s, n) { return s * 2 + n; }, 0);
+'use strict';
+
+define(function () {
+    // Generic functions
+    var bitsToNum = function bitsToNum(ba) {
+        return ba.reduce(function (s, n) {
+            return s * 2 + n;
+        }, 0);
     };
 
-    var byteToBitArr = function(bite) {
+    var byteToBitArr = function byteToBitArr(bite) {
         var a = [];
         for (var i = 7; i >= 0; i--) {
-            a.push(!!(bite & (1 << i)));
+            a.push(!!(bite & 1 << i));
         }
         return a;
     };
 
-// Stream
+    // Stream
     /**
      * @constructor
      */ // Make compiler happy.
-    var Stream = function(data) {
+    var Stream = function Stream(data) {
         this.data = data;
         this.len = this.data.length;
         this.pos = 0;
 
-        this.readByte = function() {
+        this.readByte = function () {
             if (this.pos >= this.data.length) {
                 throw new Error('Attempted to read past end of stream.');
             }
             return data.charCodeAt(this.pos++) & 0xFF;
         };
 
-        this.readBytes = function(n) {
+        this.readBytes = function (n) {
             var bytes = [];
             for (var i = 0; i < n; i++) {
                 bytes.push(this.readByte());
@@ -36,7 +40,7 @@ define(function() {
             return bytes;
         };
 
-        this.read = function(n) {
+        this.read = function (n) {
             var s = '';
             for (var i = 0; i < n; i++) {
                 s += String.fromCharCode(this.readByte());
@@ -44,20 +48,21 @@ define(function() {
             return s;
         };
 
-        this.readUnsigned = function() { // Little-endian.
+        this.readUnsigned = function () {
+            // Little-endian.
             var a = this.readBytes(2);
             return (a[1] << 8) + a[0];
         };
     };
 
-    var lzwDecode = function(minCodeSize, data) {
+    var lzwDecode = function lzwDecode(minCodeSize, data) {
         // TODO: Now that the GIF parser is a bit different, maybe this should get an array of bytes instead of a String?
         var pos = 0; // Maybe this streaming thing should be merged with the Stream?
 
-        var readCode = function(size) {
+        var readCode = function readCode(size) {
             var code = 0;
             for (var i = 0; i < size; i++) {
-                if (data.charCodeAt(pos >> 3) & (1 << (pos & 7))) {
+                if (data.charCodeAt(pos >> 3) & 1 << (pos & 7)) {
                     code |= 1 << i;
                 }
                 pos++;
@@ -74,7 +79,7 @@ define(function() {
 
         var dict = [];
 
-        var clear = function() {
+        var clear = function clear() {
             dict = [];
             codeSize = minCodeSize + 1;
             for (var i = 0; i < clearCode; i++) {
@@ -82,7 +87,6 @@ define(function() {
             }
             dict[clearCode] = [];
             dict[eoiCode] = null;
-
         };
 
         var code;
@@ -108,7 +112,7 @@ define(function() {
             }
             output.push.apply(output, dict[code]);
 
-            if (dict.length === (1 << codeSize) && codeSize < 12) {
+            if (dict.length === 1 << codeSize && codeSize < 12) {
                 // If we're at the last code and codeSize is 12, the next code will be a clearCode, and it'll be 12 bits long.
                 codeSize++;
             }
@@ -119,12 +123,13 @@ define(function() {
         return output;
     };
 
-// The actual parsing; returns an object with properties.
-    var parseGIF = function(st, handler) {
+    // The actual parsing; returns an object with properties.
+    var parseGIF = function parseGIF(st, handler) {
         handler || (handler = {});
 
         // LZW (GIF-specific)
-        var parseCT = function(entries) { // Each entry is 3 bytes, for RGB.
+        var parseCT = function parseCT(entries) {
+            // Each entry is 3 bytes, for RGB.
             var ct = [];
             for (var i = 0; i < entries; i++) {
                 ct.push(st.readBytes(3));
@@ -132,7 +137,7 @@ define(function() {
             return ct;
         };
 
-        var readSubBlocks = function() {
+        var readSubBlocks = function readSubBlocks() {
             var size, data;
             data = '';
             do {
@@ -142,7 +147,7 @@ define(function() {
             return data;
         };
 
-        var parseHeader = function() {
+        var parseHeader = function parseHeader() {
             var hdr = {};
             hdr.sig = st.read(3);
             hdr.ver = st.read(3);
@@ -161,13 +166,13 @@ define(function() {
             hdr.pixelAspectRatio = st.readByte(); // if not 0, aspectRatio = (pixelAspectRatio + 15) / 64
 
             if (hdr.gctFlag) {
-                hdr.gct = parseCT(1 << (hdr.gctSize + 1));
+                hdr.gct = parseCT(1 << hdr.gctSize + 1);
             }
             handler.hdr && handler.hdr(hdr);
         };
 
-        var parseExt = function(block) {
-            var parseGCExt = function(block) {
+        var parseExt = function parseExt(block) {
+            var parseGCExt = function parseGCExt(block) {
                 var blockSize = st.readByte(); // Always 4
 
                 var bits = byteToBitArr(st.readByte());
@@ -185,12 +190,12 @@ define(function() {
                 handler.gce && handler.gce(block);
             };
 
-            var parseComExt = function(block) {
+            var parseComExt = function parseComExt(block) {
                 block.comment = readSubBlocks();
                 handler.com && handler.com(block);
             };
 
-            var parsePTExt = function(block) {
+            var parsePTExt = function parsePTExt(block) {
                 // No one *ever* uses this. If you use it, deal with parsing it yourself.
                 var blockSize = st.readByte(); // Always 12
                 block.ptHeader = st.readBytes(12);
@@ -198,8 +203,8 @@ define(function() {
                 handler.pte && handler.pte(block);
             };
 
-            var parseAppExt = function(block) {
-                var parseNetscapeExt = function(block) {
+            var parseAppExt = function parseAppExt(block) {
+                var parseNetscapeExt = function parseNetscapeExt(block) {
                     var blockSize = st.readByte(); // Always 3
                     block.unknown = st.readByte(); // ??? Always 1? What is this?
                     block.iterations = st.readUnsigned();
@@ -207,7 +212,7 @@ define(function() {
                     handler.app && handler.app.NETSCAPE && handler.app.NETSCAPE(block);
                 };
 
-                var parseUnknownAppExt = function(block) {
+                var parseUnknownAppExt = function parseUnknownAppExt(block) {
                     block.appData = readSubBlocks();
                     // FIXME: This won't work if a handler wants to match on any identifier.
                     handler.app && handler.app[block.identifier] && handler.app[block.identifier](block);
@@ -226,7 +231,7 @@ define(function() {
                 }
             };
 
-            var parseUnknownExt = function(block) {
+            var parseUnknownExt = function parseUnknownExt(block) {
                 block.data = readSubBlocks();
                 handler.unknown && handler.unknown(block);
             };
@@ -256,26 +261,26 @@ define(function() {
             }
         };
 
-        var parseImg = function(img) {
-            var deinterlace = function(pixels, width) {
+        var parseImg = function parseImg(img) {
+            var deinterlace = function deinterlace(pixels, width) {
                 // Of course this defeats the purpose of interlacing. And it's *probably*
                 // the least efficient way it's ever been implemented. But nevertheless...
 
                 var newPixels = new Array(pixels.length);
                 var rows = pixels.length / width;
-                var cpRow = function(toRow, fromRow) {
+                var cpRow = function cpRow(toRow, fromRow) {
                     var fromPixels = pixels.slice(fromRow * width, (fromRow + 1) * width);
                     newPixels.splice.apply(newPixels, [toRow * width, width].concat(fromPixels));
                 };
 
                 // See appendix E.
-                var offsets = [0,4,2,1];
-                var steps   = [8,8,4,2];
+                var offsets = [0, 4, 2, 1];
+                var steps = [8, 8, 4, 2];
 
                 var fromRow = 0;
                 for (var pass = 0; pass < 4; pass++) {
                     for (var toRow = offsets[pass]; toRow < rows; toRow += steps[pass]) {
-                        cpRow(toRow, fromRow)
+                        cpRow(toRow, fromRow);
                         fromRow++;
                     }
                 }
@@ -296,7 +301,7 @@ define(function() {
             img.lctSize = bitsToNum(bits.splice(0, 3));
 
             if (img.lctFlag) {
-                img.lct = parseCT(1 << (img.lctSize + 1));
+                img.lct = parseCT(1 << img.lctSize + 1);
             }
 
             img.lzwMinCodeSize = st.readByte();
@@ -305,18 +310,19 @@ define(function() {
 
             img.pixels = lzwDecode(img.lzwMinCodeSize, lzwData);
 
-            if (img.interlaced) { // Move
+            if (img.interlaced) {
+                // Move
                 img.pixels = deinterlace(img.pixels, img.width);
             }
 
             handler.img && handler.img(img);
         };
 
-        var parseBlock = function() {
+        var parseBlock = function parseBlock() {
             var block = {};
             block.sentinel = st.readByte();
 
-            switch (String.fromCharCode(block.sentinel)) { // For ease of matching
+            switch (String.fromCharCode(block.sentinel)) {// For ease of matching
                 case '!':
                     block.type = 'ext';
                     parseExt(block);
@@ -336,7 +342,7 @@ define(function() {
             if (block.type !== 'eof') setTimeout(parseBlock, 0);
         };
 
-        var parse = function() {
+        var parse = function parse() {
             parseHeader();
             setTimeout(parseBlock, 0);
         };
@@ -344,13 +350,14 @@ define(function() {
         parse();
     };
 
-// BEGIN_NON_BOOKMARKLET_CODE
+    // BEGIN_NON_BOOKMARKLET_CODE
     if (typeof exports !== 'undefined') {
         exports.Stream = Stream;
         exports.parseGIF = parseGIF;
     }
-// END_NON_BOOKMARKLET_CODE
+    // END_NON_BOOKMARKLET_CODE
 
 
-    return { Stream, parseGIF };
+    return { Stream: Stream, parseGIF: parseGIF };
 });
+//# sourceMappingURL=gif.js.map
