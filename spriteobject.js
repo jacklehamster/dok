@@ -11,15 +11,18 @@ define([
     }
 
     SpriteObject.prototype.init = function(
-        x,y,z,
-        width, height,
-        quaternionArray, light, img) {
+            x,y,z,
+            width, height,
+            quaternionArray, light, img) {
         this.position.set(x,y,z);
         this.size[0] = width;
         this.size[1] = height;
         this.hasQuaternionArray = quaternionArray !== null;
-        if(quaternionArray) {
-            this.quaternionArray.set(quaternionArray);
+        if(this.hasQuaternionArray) {
+            this.quaternionArray[0] = quaternionArray[0];
+            this.quaternionArray[1] = quaternionArray[1];
+            this.quaternionArray[2] = quaternionArray[2];
+            this.quaternionArray[3] = quaternionArray[3];
         }
         this.light = light;
         this.img = img;
