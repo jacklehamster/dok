@@ -133,7 +133,7 @@ define('utils', [], function () {
             return window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || requestAnimationFrame_compat;
         }();
 
-        var timeout,
+        var timeout = void 0,
             time = 0;
         function requestAnimationFrame_compat(callback) {
             timeout = setTimeout(timeoutCallback, 1000 / 60, callback);
@@ -169,7 +169,7 @@ define('utils', [], function () {
             var xhr = new XMLHttpRequest();
             xhr.overrideMimeType(binary ? "text/plain; charset=x-user-defined" : "text/plain; charset=UTF-8");
             xhr.open(method ? method : "GET", src, true);
-            xhr.addEventListener('load', function (e) {
+            xhr.addEventListener('load', function () {
                 if (xhr.readyState === 4) {
                     if (xhr.status === 200) {
                         callback(xhr.responseText);
@@ -255,15 +255,25 @@ define('utils', [], function () {
         };
     }
 
-    function addLinkToHeadTag(rel, href) {
-        var link = document.createElement("link");
-        link.setAttribute("rel", rel);
-        link.href = href;
-        document.head.appendChild(link);
-    }
-
     function getTitle() {
         return title;
+    }
+
+    function makeArray() {
+        //  call like makArray(1,2) => [ [], [] ]
+        return makeArrayHelper(Array.prototype.slice.apply(arguments));
+    }
+
+    function makeArrayHelper(dimensions) {
+        var array = [];
+        array.length = dimensions[0];
+        if (dimensions.length > 1) {
+            var slice_chunk = dimensions.slice(1);
+            for (var i = 0; i < array.length; i++) {
+                array[i] = slice_chunk(slice_chunk);
+            }
+        }
+        return array;
     }
 
     /**
@@ -286,6 +296,7 @@ define('utils', [], function () {
     Utils.loadAsync = loadAsync;
     Utils.Roundabout = Roundabout;
     Utils.getTitle = getTitle;
+    Utils.makeArray = makeArray;
 
     /**
      *   PROCESSES
@@ -293,7 +304,17 @@ define('utils', [], function () {
     setupExit();
     definePrototypes();
 
-    /*    loadAsync("package.json", function(str) {
+    /*
+    
+         function addLinkToHeadTag(rel, href) {
+             const link = document.createElement("link");
+             link.setAttribute("rel", rel);
+             link.href = href;
+             document.head.appendChild(link);
+         }
+    
+    
+         loadAsync("package.json", function(str) {
             try {
                 var object = JSON.parse(str);
                 var icon = object.window.icon || require.toUrl('images/logo.ico');
@@ -493,7 +514,370 @@ define('gifworker', ['utils', 'loop'], function (Utils, Loop) {
 //# sourceMappingURL=gifworker.js.map;
 
 
-define('gifHandler', ['utils', 'loop', 'gifworker'], function (Utils, Loop, gifWorker) {
+define('jsgif/gif', [], function () {
+    // Generic functions
+    var bitsToNum = function bitsToNum(ba) {
+        return ba.reduce(function (s, n) {
+            return s * 2 + n;
+        }, 0);
+    };
+
+    var byteToBitArr = function byteToBitArr(bite) {
+        var a = [];
+        for (var i = 7; i >= 0; i--) {
+            a.push(!!(bite & 1 << i));
+        }
+        return a;
+    };
+
+    // Stream
+    /**
+     * @constructor
+     */ // Make compiler happy.
+    var Stream = function Stream(data) {
+        this.data = data;
+        this.len = this.data.length;
+        this.pos = 0;
+
+        this.readByte = function () {
+            if (this.pos >= this.data.length) {
+                throw new Error('Attempted to read past end of stream.');
+            }
+            return data.charCodeAt(this.pos++) & 0xFF;
+        };
+
+        this.readBytes = function (n) {
+            var bytes = [];
+            for (var i = 0; i < n; i++) {
+                bytes.push(this.readByte());
+            }
+            return bytes;
+        };
+
+        this.read = function (n) {
+            var s = '';
+            for (var i = 0; i < n; i++) {
+                s += String.fromCharCode(this.readByte());
+            }
+            return s;
+        };
+
+        this.readUnsigned = function () {
+            // Little-endian.
+            var a = this.readBytes(2);
+            return (a[1] << 8) + a[0];
+        };
+    };
+
+    var lzwDecode = function lzwDecode(minCodeSize, data) {
+        // TODO: Now that the GIF parser is a bit different, maybe this should get an array of bytes instead of a String?
+        var pos = 0; // Maybe this streaming thing should be merged with the Stream?
+
+        var readCode = function readCode(size) {
+            var code = 0;
+            for (var i = 0; i < size; i++) {
+                if (data.charCodeAt(pos >> 3) & 1 << (pos & 7)) {
+                    code |= 1 << i;
+                }
+                pos++;
+            }
+            return code;
+        };
+
+        var output = [];
+
+        var clearCode = 1 << minCodeSize;
+        var eoiCode = clearCode + 1;
+
+        var codeSize = minCodeSize + 1;
+
+        var dict = [];
+
+        var clear = function clear() {
+            dict = [];
+            codeSize = minCodeSize + 1;
+            for (var i = 0; i < clearCode; i++) {
+                dict[i] = [i];
+            }
+            dict[clearCode] = [];
+            dict[eoiCode] = null;
+        };
+
+        var code;
+        var last;
+
+        while (true) {
+            last = code;
+            code = readCode(codeSize);
+
+            if (code === clearCode) {
+                clear();
+                continue;
+            }
+            if (code === eoiCode) break;
+
+            if (code < dict.length) {
+                if (last !== clearCode) {
+                    dict.push(dict[last].concat(dict[code][0]));
+                }
+            } else {
+                if (code !== dict.length) throw new Error('Invalid LZW code.');
+                dict.push(dict[last].concat(dict[last][0]));
+            }
+            output.push.apply(output, dict[code]);
+
+            if (dict.length === 1 << codeSize && codeSize < 12) {
+                // If we're at the last code and codeSize is 12, the next code will be a clearCode, and it'll be 12 bits long.
+                codeSize++;
+            }
+        }
+
+        // I don't know if this is technically an error, but some GIFs do it.
+        //if (Math.ceil(pos / 8) !== data.length) throw new Error('Extraneous LZW bytes.');
+        return output;
+    };
+
+    // The actual parsing; returns an object with properties.
+    var parseGIF = function parseGIF(st, handler) {
+        handler || (handler = {});
+
+        // LZW (GIF-specific)
+        var parseCT = function parseCT(entries) {
+            // Each entry is 3 bytes, for RGB.
+            var ct = [];
+            for (var i = 0; i < entries; i++) {
+                ct.push(st.readBytes(3));
+            }
+            return ct;
+        };
+
+        var readSubBlocks = function readSubBlocks() {
+            var size, data;
+            data = '';
+            do {
+                size = st.readByte();
+                data += st.read(size);
+            } while (size !== 0);
+            return data;
+        };
+
+        var parseHeader = function parseHeader() {
+            var hdr = {};
+            hdr.sig = st.read(3);
+            hdr.ver = st.read(3);
+            if (hdr.sig !== 'GIF') throw new Error('Not a GIF file.'); // XXX: This should probably be handled more nicely.
+
+            hdr.width = st.readUnsigned();
+            hdr.height = st.readUnsigned();
+
+            var bits = byteToBitArr(st.readByte());
+            hdr.gctFlag = bits.shift();
+            hdr.colorRes = bitsToNum(bits.splice(0, 3));
+            hdr.sorted = bits.shift();
+            hdr.gctSize = bitsToNum(bits.splice(0, 3));
+
+            hdr.bgColor = st.readByte();
+            hdr.pixelAspectRatio = st.readByte(); // if not 0, aspectRatio = (pixelAspectRatio + 15) / 64
+
+            if (hdr.gctFlag) {
+                hdr.gct = parseCT(1 << hdr.gctSize + 1);
+            }
+            handler.hdr && handler.hdr(hdr);
+        };
+
+        var parseExt = function parseExt(block) {
+            var parseGCExt = function parseGCExt(block) {
+                var blockSize = st.readByte(); // Always 4
+
+                var bits = byteToBitArr(st.readByte());
+                block.reserved = bits.splice(0, 3); // Reserved; should be 000.
+                block.disposalMethod = bitsToNum(bits.splice(0, 3));
+                block.userInput = bits.shift();
+                block.transparencyGiven = bits.shift();
+
+                block.delayTime = st.readUnsigned();
+
+                block.transparencyIndex = st.readByte();
+
+                block.terminator = st.readByte();
+
+                handler.gce && handler.gce(block);
+            };
+
+            var parseComExt = function parseComExt(block) {
+                block.comment = readSubBlocks();
+                handler.com && handler.com(block);
+            };
+
+            var parsePTExt = function parsePTExt(block) {
+                // No one *ever* uses this. If you use it, deal with parsing it yourself.
+                var blockSize = st.readByte(); // Always 12
+                block.ptHeader = st.readBytes(12);
+                block.ptData = readSubBlocks();
+                handler.pte && handler.pte(block);
+            };
+
+            var parseAppExt = function parseAppExt(block) {
+                var parseNetscapeExt = function parseNetscapeExt(block) {
+                    var blockSize = st.readByte(); // Always 3
+                    block.unknown = st.readByte(); // ??? Always 1? What is this?
+                    block.iterations = st.readUnsigned();
+                    block.terminator = st.readByte();
+                    handler.app && handler.app.NETSCAPE && handler.app.NETSCAPE(block);
+                };
+
+                var parseUnknownAppExt = function parseUnknownAppExt(block) {
+                    block.appData = readSubBlocks();
+                    // FIXME: This won't work if a handler wants to match on any identifier.
+                    handler.app && handler.app[block.identifier] && handler.app[block.identifier](block);
+                };
+
+                var blockSize = st.readByte(); // Always 11
+                block.identifier = st.read(8);
+                block.authCode = st.read(3);
+                switch (block.identifier) {
+                    case 'NETSCAPE':
+                        parseNetscapeExt(block);
+                        break;
+                    default:
+                        parseUnknownAppExt(block);
+                        break;
+                }
+            };
+
+            var parseUnknownExt = function parseUnknownExt(block) {
+                block.data = readSubBlocks();
+                handler.unknown && handler.unknown(block);
+            };
+
+            block.label = st.readByte();
+            switch (block.label) {
+                case 0xF9:
+                    block.extType = 'gce';
+                    parseGCExt(block);
+                    break;
+                case 0xFE:
+                    block.extType = 'com';
+                    parseComExt(block);
+                    break;
+                case 0x01:
+                    block.extType = 'pte';
+                    parsePTExt(block);
+                    break;
+                case 0xFF:
+                    block.extType = 'app';
+                    parseAppExt(block);
+                    break;
+                default:
+                    block.extType = 'unknown';
+                    parseUnknownExt(block);
+                    break;
+            }
+        };
+
+        var parseImg = function parseImg(img) {
+            var deinterlace = function deinterlace(pixels, width) {
+                // Of course this defeats the purpose of interlacing. And it's *probably*
+                // the least efficient way it's ever been implemented. But nevertheless...
+
+                var newPixels = new Array(pixels.length);
+                var rows = pixels.length / width;
+                var cpRow = function cpRow(toRow, fromRow) {
+                    var fromPixels = pixels.slice(fromRow * width, (fromRow + 1) * width);
+                    newPixels.splice.apply(newPixels, [toRow * width, width].concat(fromPixels));
+                };
+
+                // See appendix E.
+                var offsets = [0, 4, 2, 1];
+                var steps = [8, 8, 4, 2];
+
+                var fromRow = 0;
+                for (var pass = 0; pass < 4; pass++) {
+                    for (var toRow = offsets[pass]; toRow < rows; toRow += steps[pass]) {
+                        cpRow(toRow, fromRow);
+                        fromRow++;
+                    }
+                }
+
+                return newPixels;
+            };
+
+            img.leftPos = st.readUnsigned();
+            img.topPos = st.readUnsigned();
+            img.width = st.readUnsigned();
+            img.height = st.readUnsigned();
+
+            var bits = byteToBitArr(st.readByte());
+            img.lctFlag = bits.shift();
+            img.interlaced = bits.shift();
+            img.sorted = bits.shift();
+            img.reserved = bits.splice(0, 2);
+            img.lctSize = bitsToNum(bits.splice(0, 3));
+
+            if (img.lctFlag) {
+                img.lct = parseCT(1 << img.lctSize + 1);
+            }
+
+            img.lzwMinCodeSize = st.readByte();
+
+            var lzwData = readSubBlocks();
+
+            img.pixels = lzwDecode(img.lzwMinCodeSize, lzwData);
+
+            if (img.interlaced) {
+                // Move
+                img.pixels = deinterlace(img.pixels, img.width);
+            }
+
+            handler.img && handler.img(img);
+        };
+
+        var parseBlock = function parseBlock() {
+            var block = {};
+            block.sentinel = st.readByte();
+
+            switch (String.fromCharCode(block.sentinel)) {// For ease of matching
+                case '!':
+                    block.type = 'ext';
+                    parseExt(block);
+                    break;
+                case ',':
+                    block.type = 'img';
+                    parseImg(block);
+                    break;
+                case ';':
+                    block.type = 'eof';
+                    handler.eof && handler.eof(block);
+                    break;
+                default:
+                    throw new Error('Unknown block: 0x' + block.sentinel.toString(16)); // TODO: Pad this with a 0.
+            }
+
+            if (block.type !== 'eof') setTimeout(parseBlock, 0);
+        };
+
+        var parse = function parse() {
+            parseHeader();
+            setTimeout(parseBlock, 0);
+        };
+
+        parse();
+    };
+
+    // BEGIN_NON_BOOKMARKLET_CODE
+    if (typeof exports !== 'undefined') {
+        exports.Stream = Stream;
+        exports.parseGIF = parseGIF;
+    }
+    // END_NON_BOOKMARKLET_CODE
+
+
+    return { Stream: Stream, parseGIF: parseGIF };
+});
+//# sourceMappingURL=gif.js.map;
+
+
+define('gifHandler', ['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Utils, Loop, gifWorker, JSGif) {
     'use strict';
 
     var gifs = {};
@@ -611,9 +995,7 @@ define('gifHandler', ['utils', 'loop', 'gifworker'], function (Utils, Loop, gifW
         };
 
         Utils.loadAsync(src, function (content) {
-            require(['https://jacklehamster.github.io/jsgif/gif.js'], function () {
-                parseGIF(new Stream(content), gifInfo);
-            });
+            JSGif.parseGIF(new JSGif.Stream(content), gifInfo);
         }, true);
 
         return gifInfo;
@@ -841,8 +1223,11 @@ define('spriteobject', ['threejs', 'objectpool'], function (THREE, ObjectPool) {
         this.size[0] = width;
         this.size[1] = height;
         this.hasQuaternionArray = quaternionArray !== null;
-        if (quaternionArray) {
-            this.quaternionArray.set(quaternionArray);
+        if (this.hasQuaternionArray) {
+            this.quaternionArray[0] = quaternionArray[0];
+            this.quaternionArray[1] = quaternionArray[1];
+            this.quaternionArray[2] = quaternionArray[2];
+            this.quaternionArray[3] = quaternionArray[3];
         }
         this.light = light;
         this.img = img;
@@ -962,7 +1347,7 @@ define('packer', ['utils'], function (Utils) {
 //# sourceMappingURL=packer.js.map;
 
 
-define('gifhandler', ['utils', 'loop', 'gifworker'], function (Utils, Loop, gifWorker) {
+define('gifhandler', ['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Utils, Loop, gifWorker, JSGif) {
     'use strict';
 
     var gifs = {};
@@ -1080,9 +1465,7 @@ define('gifhandler', ['utils', 'loop', 'gifworker'], function (Utils, Loop, gifW
         };
 
         Utils.loadAsync(src, function (content) {
-            require(['https://jacklehamster.github.io/jsgif/gif.js'], function () {
-                parseGIF(new Stream(content), gifInfo);
-            });
+            JSGif.parseGIF(new JSGif.Stream(content), gifInfo);
         }, true);
 
         return gifInfo;
@@ -1958,7 +2341,7 @@ define('spriterenderer', ['threejs', 'utils', 'spriteobject', 'spritesheet', 'ob
     function render() {
         var imageCount = this.imageCount;
         var pointCount = planeGeometry.attributes.position.count;
-        var previousAttribute;
+        var previousAttribute = void 0;
 
         var mesh = this.mesh;
         var geometry = mesh.geometry;
@@ -2000,8 +2383,8 @@ define('spriterenderer', ['threejs', 'utils', 'spriteobject', 'spritesheet', 'ob
         }
         if (!geometry.index || geometry.index.count < imageCount * planeGeometry.index.array.length) {
             previousAttribute = geometry.index;
-            var indices = planeGeometry.index.array;
-            geometry.index = new THREE.BufferAttribute(new Uint16Array(imageCount * indices.length), 1);
+            var _indices = planeGeometry.index.array;
+            geometry.index = new THREE.BufferAttribute(new Uint16Array(imageCount * _indices.length), 1);
             if (previousAttribute) geometry.index.copyArray(previousAttribute.array);
             geometry.index.setDynamic(true);
         }
@@ -2073,8 +2456,8 @@ define('spriterenderer', ['threejs', 'utils', 'spriteobject', 'spritesheet', 'ob
             }
         }
 
-        for (i = 0; i < imageCount; i++) {
-            geo_index.set(imageOrder[i].indexArray, i * 6);
+        for (var _i = 0; _i < imageCount; _i++) {
+            geo_index.set(imageOrder[_i].indexArray, _i * 6);
         }
 
         if (geometry.drawRange.start !== 0 || geometry.drawRange.count !== imageCount * planeGeometry.index.count) {
@@ -2149,7 +2532,6 @@ define('collection', ['utils', 'spritesheet', 'spriteobject', 'camera'], functio
         } else {
             switch (this.options.type) {
                 case "grid":
-                    this.forEach = Grid_forEach.bind(this);
                     break;
                 default:
                     Utils.handleError('Collection type not recognized');
@@ -2160,7 +2542,7 @@ define('collection', ['utils', 'spritesheet', 'spriteobject', 'camera'], functio
     Collection.prototype.pos = null;
     Collection.prototype.size = null;
     Collection.prototype.getSprite = nop;
-    Collection.prototype.forEach = nop;
+    Collection.prototype.forEach = Grid_forEach;
     Collection.prototype.options = null;
     Collection.prototype.getSprite = nop;
     Collection.prototype.isCollection = true;
@@ -2169,14 +2551,19 @@ define('collection', ['utils', 'spritesheet', 'spriteobject', 'camera'], functio
      *  FUNCTION DEFINITIONS
      */
     function Grid_forEach(callback) {
+        var optionsX = this.options.x;
+        var optionsY = this.options.y;
+        var optionsWidth = this.options.width;
+        var optionsHeight = this.options.height;
+        var gridCount = optionsWidth * optionsHeight;
         var count = this.options.count || 1;
-        var gridCount = this.options.width * this.options.height;
         var length = gridCount * count;
+
         for (var i = 0; i < length; i++) {
-            var x = this.options.x + i % this.options.width;
-            var y = this.options.y + Math.floor(i / this.options.width) % this.options.height;
+            var _x = optionsX + i % optionsWidth;
+            var _y = optionsY + Math.floor(i / optionsWidth) % optionsHeight;
             var c = Math.floor(i / gridCount);
-            var obj = this.getSprite(x, y, c);
+            var obj = this.getSprite(_x, _y, c);
             if (obj) {
                 if (obj.forEach) {
                     obj.forEach(callback);
@@ -2280,9 +2667,9 @@ define('collection', ['utils', 'spritesheet', 'spriteobject', 'camera'], functio
             var xArea = Math.floor(camPos.x / areaSize);
             var yArea = Math.floor(camPos.y / areaSize);
             var range = 1;
-            for (var y = yArea - range; y <= yArea + range; y++) {
-                for (var x = xArea - range; x <= xArea + range; x++) {
-                    var area = spriteMap[x + "_" + y];
+            for (var _y2 = yArea - range; _y2 <= yArea + range; _y2++) {
+                for (var _x2 = xArea - range; _x2 <= xArea + range; _x2++) {
+                    var area = spriteMap[_x2 + "_" + _y2];
                     if (area) {
                         for (var a in area) {
                             var sprites = area[a];

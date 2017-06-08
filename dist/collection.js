@@ -14,7 +14,6 @@ define(['utils', 'spritesheet', 'spriteobject', 'camera'], function (Utils, Spri
         } else {
             switch (this.options.type) {
                 case "grid":
-                    this.forEach = Grid_forEach.bind(this);
                     break;
                 default:
                     Utils.handleError('Collection type not recognized');
@@ -25,7 +24,7 @@ define(['utils', 'spritesheet', 'spriteobject', 'camera'], function (Utils, Spri
     Collection.prototype.pos = null;
     Collection.prototype.size = null;
     Collection.prototype.getSprite = nop;
-    Collection.prototype.forEach = nop;
+    Collection.prototype.forEach = Grid_forEach;
     Collection.prototype.options = null;
     Collection.prototype.getSprite = nop;
     Collection.prototype.isCollection = true;
@@ -34,14 +33,19 @@ define(['utils', 'spritesheet', 'spriteobject', 'camera'], function (Utils, Spri
      *  FUNCTION DEFINITIONS
      */
     function Grid_forEach(callback) {
+        var optionsX = this.options.x;
+        var optionsY = this.options.y;
+        var optionsWidth = this.options.width;
+        var optionsHeight = this.options.height;
+        var gridCount = optionsWidth * optionsHeight;
         var count = this.options.count || 1;
-        var gridCount = this.options.width * this.options.height;
         var length = gridCount * count;
+
         for (var i = 0; i < length; i++) {
-            var x = this.options.x + i % this.options.width;
-            var y = this.options.y + Math.floor(i / this.options.width) % this.options.height;
+            var _x = optionsX + i % optionsWidth;
+            var _y = optionsY + Math.floor(i / optionsWidth) % optionsHeight;
             var c = Math.floor(i / gridCount);
-            var obj = this.getSprite(x, y, c);
+            var obj = this.getSprite(_x, _y, c);
             if (obj) {
                 if (obj.forEach) {
                     obj.forEach(callback);
@@ -145,9 +149,9 @@ define(['utils', 'spritesheet', 'spriteobject', 'camera'], function (Utils, Spri
             var xArea = Math.floor(camPos.x / areaSize);
             var yArea = Math.floor(camPos.y / areaSize);
             var range = 1;
-            for (var y = yArea - range; y <= yArea + range; y++) {
-                for (var x = xArea - range; x <= xArea + range; x++) {
-                    var area = spriteMap[x + "_" + y];
+            for (var _y2 = yArea - range; _y2 <= yArea + range; _y2++) {
+                for (var _x2 = xArea - range; _x2 <= xArea + range; _x2++) {
+                    var area = spriteMap[_x2 + "_" + _y2];
                     if (area) {
                         for (var a in area) {
                             var sprites = area[a];

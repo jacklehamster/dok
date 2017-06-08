@@ -264,6 +264,22 @@ define(function() {
         return title;
     }
 
+    function makeArray() {  //  call like makArray(1,2) => [ [], [] ]
+        return makeArrayHelper(Array.prototype.slice.apply(arguments));
+    }
+
+    function makeArrayHelper(dimensions) {
+        const array = [];
+        array.length = dimensions[0];
+        if(dimensions.length > 1) {
+            const slice_chunk = dimensions.slice(1);
+            for(let i=0; i<array.length; i++) {
+                array[i] = slice_chunk(slice_chunk);
+            }
+        }
+        return array;
+    }
+
     /**
      *  PUBLIC DECLARATIONS
      */
@@ -285,6 +301,7 @@ define(function() {
     Utils.loadAsync = loadAsync;
     Utils.Roundabout = Roundabout;
     Utils.getTitle = getTitle;
+    Utils.makeArray = makeArray;
 
     /**
      *   PROCESSES

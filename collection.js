@@ -18,7 +18,6 @@ define([
         } else {
             switch(this.options.type) {
                 case "grid":
-                    this.forEach = Grid_forEach.bind(this);
                     break;
                 default:
                     Utils.handleError('Collection type not recognized');
@@ -29,7 +28,7 @@ define([
     Collection.prototype.pos = null;
     Collection.prototype.size = null;
     Collection.prototype.getSprite = nop;
-    Collection.prototype.forEach = nop;
+    Collection.prototype.forEach = Grid_forEach;
     Collection.prototype.options = null;
     Collection.prototype.getSprite = nop;
     Collection.prototype.isCollection = true;
@@ -38,14 +37,19 @@ define([
      *  FUNCTION DEFINITIONS
      */
     function Grid_forEach(callback) {
-        var count = this.options.count || 1;
-        var gridCount = this.options.width*this.options.height;
-        var length = gridCount*count;
-        for(var i=0; i<length; i++) {
-            var x = this.options.x + i%this.options.width;
-            var y = this.options.y + Math.floor(i/this.options.width) % this.options.height;
-            var c = Math.floor(i / gridCount);
-            var obj = this.getSprite(x,y,c);
+        const optionsX = this.options.x;
+        const optionsY = this.options.y;
+        const optionsWidth = this.options.width;
+        const optionsHeight = this.options.height;
+        const gridCount = optionsWidth*optionsHeight;
+        const count = this.options.count || 1;
+        const length = gridCount*count;
+
+        for(let i=0; i<length; i++) {
+            const x = optionsX + i%optionsWidth;
+            const y = optionsY + Math.floor(i/optionsWidth) % optionsHeight;
+            const c = Math.floor(i / gridCount);
+            const obj = this.getSprite(x,y,c);
             if(obj) {
                 if(obj.forEach) {
                     obj.forEach(callback);
@@ -60,12 +64,12 @@ define([
     }
 
     function spriteFace(spriteInfo) {
-        var x = spriteInfo.x;
-        var y = spriteInfo.y;
-        var index = spriteInfo.index;
-        var size = cellSize;
-        var light = 1;
-        var img = SpriteSheet.spritesheet.sprite[index];
+        const x = spriteInfo.x;
+        const y = spriteInfo.y;
+        const index = spriteInfo.index;
+        const size = cellSize;
+        const light = 1;
+        const img = SpriteSheet.spritesheet.sprite[index];
 
         return SpriteObject.create().init(
             x*cellSize,y*cellSize,size/2,
@@ -76,7 +80,7 @@ define([
         );
     }
 
-    var cubeFaces = [];
+    const cubeFaces = [];
     function spriteCube(spriteInfo) {
         cubeFaces.length = 0;
 
@@ -95,12 +99,12 @@ define([
     }
 
     function createSpriteCollection(options) {
-        var spriteMap = [];
-        var areaSize = 50;
-        var spriteRegistry = {};
-        var cellSize = 64;
+        const spriteMap = [];
+        const areaSize = 50;
+        const spriteRegistry = {};
+        const cellSize = 64;
 
-        var spriteFunction = function(spriteInfo) {
+        let spriteFunction = function(spriteInfo) {
             switch(spriteInfo.type) {
                 case 'face':
                     return spriteFace(spriteInfo);
@@ -114,7 +118,7 @@ define([
             spriteFunction = options.spriteFunction;
         }
 
-        var spriteCount = 0;
+        let spriteCount = 0;
         function SpriteInfo(x,y,index) {
             this.uid = 'uid'+spriteCount++;
             spriteRegistry[this.uid] = this;
@@ -122,19 +126,19 @@ define([
             this.enterArea(x,y);
         }
         SpriteInfo.prototype.leaveArea = function() {
-            var areaId = getAreaId(this.x,this.y);
-            var area = spriteMap[areaId];
+            const areaId = getAreaId(this.x,this.y);
+            const area = spriteMap[areaId];
             if(area) {
-                var posId = Math.floor(this.x) + "_" + Math.floor(this.y);
+                const posId = Math.floor(this.x) + "_" + Math.floor(this.y);
                 if(area[posId])
                     delete area[posId][this.uid];
             }
         };
         SpriteInfo.prototype.enterArea = function(x,y) {
             this.x = x; this.y = y;
-            var areaId = getAreaId(this.x,this.y);
-            var area = spriteMap[areaId] || (spriteMap[areaId] = {});
-            var posId = Math.floor(this.x) + "_" + Math.floor(this.y);
+            const areaId = getAreaId(this.x,this.y);
+            const area = spriteMap[areaId] || (spriteMap[areaId] = {});
+            const posId = Math.floor(this.x) + "_" + Math.floor(this.y);
             area[posId] = area[posId] || (area[posId] = {});
             area[posId][this.uid] = this;
         };
@@ -150,12 +154,12 @@ define([
             return x+"_"+y;
         }
 
-        var selectedObj = { x: 0, y: 0};
+        const selectedObj = { x: 0, y: 0};
         function getCamPos() {
-            var cellSize = 64;
-            var camera = Camera.getCamera();
-            var xPos = camera.position.x;
-            var yPos = camera.position.y;
+            const cellSize = 64;
+            const camera = Camera.getCamera();
+            const xPos = camera.position.x;
+            const yPos = camera.position.y;
 
             selectedObj.x = Math.round(xPos/cellSize);
             selectedObj.y = Math.round(yPos/cellSize) + 6;
@@ -163,22 +167,22 @@ define([
         }
 
 
-        var spriteCollection = new Collection(
+        const spriteCollection = new Collection(
             options,
             spriteFunction,
             function(callback) {
-                var camPos = getCamPos();
-                var xArea = Math.floor(camPos.x / areaSize);
-                var yArea = Math.floor(camPos.y / areaSize);
-                var range = 1;
-                for(var y=yArea-range;y<=yArea+range;y++) {
-                    for(var x=xArea-range;x<=xArea+range;x++) {
-                        var area = spriteMap[x+"_"+y];
+                const camPos = getCamPos();
+                const xArea = Math.floor(camPos.x / areaSize);
+                const yArea = Math.floor(camPos.y / areaSize);
+                const range = 1;
+                for(let y=yArea-range;y<=yArea+range;y++) {
+                    for(let x=xArea-range;x<=xArea+range;x++) {
+                        const area = spriteMap[x+"_"+y];
                         if(area) {
-                            for(var a in area) {
-                                var sprites = area[a];
-                                for(var s in sprites) {
-                                    var obj = this.getSprite(sprites[s]);
+                            for(let a in area) {
+                                const sprites = area[a];
+                                for(let s in sprites) {
+                                    const obj = this.getSprite(sprites[s]);
                                     if(Array.isArray(obj)) {
                                         obj.forEach(callback);
                                     } else {
@@ -196,14 +200,14 @@ define([
         };
 
         spriteCollection.get = function(x,y) {
-            var areaId = getAreaId(x,y);
-            var area = spriteMap[areaId];
-            var posId = Math.floor(x) + "_" + Math.floor(y);
+            const areaId = getAreaId(x,y);
+            const area = spriteMap[areaId];
+            const posId = Math.floor(x) + "_" + Math.floor(y);
             return area?area[posId]:null;
         };
         spriteCollection.find = function(uid) {
             return spriteRegistry[uid];
-        }
+        };
         return spriteCollection;
     }
 

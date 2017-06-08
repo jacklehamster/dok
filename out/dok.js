@@ -127,7 +127,7 @@ define('utils',[],function () {
             return window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || requestAnimationFrame_compat;
         }();
 
-        var timeout,
+        var timeout = void 0,
             time = 0;
         function requestAnimationFrame_compat(callback) {
             timeout = setTimeout(timeoutCallback, 1000 / 60, callback);
@@ -163,7 +163,7 @@ define('utils',[],function () {
             var xhr = new XMLHttpRequest();
             xhr.overrideMimeType(binary ? "text/plain; charset=x-user-defined" : "text/plain; charset=UTF-8");
             xhr.open(method ? method : "GET", src, true);
-            xhr.addEventListener('load', function (e) {
+            xhr.addEventListener('load', function () {
                 if (xhr.readyState === 4) {
                     if (xhr.status === 200) {
                         callback(xhr.responseText);
@@ -249,15 +249,25 @@ define('utils',[],function () {
         };
     }
 
-    function addLinkToHeadTag(rel, href) {
-        var link = document.createElement("link");
-        link.setAttribute("rel", rel);
-        link.href = href;
-        document.head.appendChild(link);
-    }
-
     function getTitle() {
         return title;
+    }
+
+    function makeArray() {
+        //  call like makArray(1,2) => [ [], [] ]
+        return makeArrayHelper(Array.prototype.slice.apply(arguments));
+    }
+
+    function makeArrayHelper(dimensions) {
+        var array = [];
+        array.length = dimensions[0];
+        if (dimensions.length > 1) {
+            var slice_chunk = dimensions.slice(1);
+            for (var i = 0; i < array.length; i++) {
+                array[i] = slice_chunk(slice_chunk);
+            }
+        }
+        return array;
     }
 
     /**
@@ -280,6 +290,7 @@ define('utils',[],function () {
     Utils.loadAsync = loadAsync;
     Utils.Roundabout = Roundabout;
     Utils.getTitle = getTitle;
+    Utils.makeArray = makeArray;
 
     /**
      *   PROCESSES
@@ -287,7 +298,17 @@ define('utils',[],function () {
     setupExit();
     definePrototypes();
 
-    /*    loadAsync("package.json", function(str) {
+    /*
+    
+         function addLinkToHeadTag(rel, href) {
+             const link = document.createElement("link");
+             link.setAttribute("rel", rel);
+             link.href = href;
+             document.head.appendChild(link);
+         }
+    
+    
+         loadAsync("package.json", function(str) {
             try {
                 var object = JSON.parse(str);
                 var icon = object.window.icon || require.toUrl('images/logo.ico');
@@ -1196,8 +1217,11 @@ define('spriteobject',['threejs', 'objectpool'], function (THREE, ObjectPool) {
         this.size[0] = width;
         this.size[1] = height;
         this.hasQuaternionArray = quaternionArray !== null;
-        if (quaternionArray) {
-            this.quaternionArray.set(quaternionArray);
+        if (this.hasQuaternionArray) {
+            this.quaternionArray[0] = quaternionArray[0];
+            this.quaternionArray[1] = quaternionArray[1];
+            this.quaternionArray[2] = quaternionArray[2];
+            this.quaternionArray[3] = quaternionArray[3];
         }
         this.light = light;
         this.img = img;
@@ -2311,7 +2335,7 @@ define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'obj
     function render() {
         var imageCount = this.imageCount;
         var pointCount = planeGeometry.attributes.position.count;
-        var previousAttribute;
+        var previousAttribute = void 0;
 
         var mesh = this.mesh;
         var geometry = mesh.geometry;
@@ -2353,8 +2377,8 @@ define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'obj
         }
         if (!geometry.index || geometry.index.count < imageCount * planeGeometry.index.array.length) {
             previousAttribute = geometry.index;
-            var indices = planeGeometry.index.array;
-            geometry.index = new THREE.BufferAttribute(new Uint16Array(imageCount * indices.length), 1);
+            var _indices = planeGeometry.index.array;
+            geometry.index = new THREE.BufferAttribute(new Uint16Array(imageCount * _indices.length), 1);
             if (previousAttribute) geometry.index.copyArray(previousAttribute.array);
             geometry.index.setDynamic(true);
         }
@@ -2426,8 +2450,8 @@ define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'obj
             }
         }
 
-        for (i = 0; i < imageCount; i++) {
-            geo_index.set(imageOrder[i].indexArray, i * 6);
+        for (var _i = 0; _i < imageCount; _i++) {
+            geo_index.set(imageOrder[_i].indexArray, _i * 6);
         }
 
         if (geometry.drawRange.start !== 0 || geometry.drawRange.count !== imageCount * planeGeometry.index.count) {
@@ -2502,7 +2526,6 @@ define('collection',['utils', 'spritesheet', 'spriteobject', 'camera'], function
         } else {
             switch (this.options.type) {
                 case "grid":
-                    this.forEach = Grid_forEach.bind(this);
                     break;
                 default:
                     Utils.handleError('Collection type not recognized');
@@ -2513,7 +2536,7 @@ define('collection',['utils', 'spritesheet', 'spriteobject', 'camera'], function
     Collection.prototype.pos = null;
     Collection.prototype.size = null;
     Collection.prototype.getSprite = nop;
-    Collection.prototype.forEach = nop;
+    Collection.prototype.forEach = Grid_forEach;
     Collection.prototype.options = null;
     Collection.prototype.getSprite = nop;
     Collection.prototype.isCollection = true;
@@ -2522,14 +2545,19 @@ define('collection',['utils', 'spritesheet', 'spriteobject', 'camera'], function
      *  FUNCTION DEFINITIONS
      */
     function Grid_forEach(callback) {
+        var optionsX = this.options.x;
+        var optionsY = this.options.y;
+        var optionsWidth = this.options.width;
+        var optionsHeight = this.options.height;
+        var gridCount = optionsWidth * optionsHeight;
         var count = this.options.count || 1;
-        var gridCount = this.options.width * this.options.height;
         var length = gridCount * count;
+
         for (var i = 0; i < length; i++) {
-            var x = this.options.x + i % this.options.width;
-            var y = this.options.y + Math.floor(i / this.options.width) % this.options.height;
+            var _x = optionsX + i % optionsWidth;
+            var _y = optionsY + Math.floor(i / optionsWidth) % optionsHeight;
             var c = Math.floor(i / gridCount);
-            var obj = this.getSprite(x, y, c);
+            var obj = this.getSprite(_x, _y, c);
             if (obj) {
                 if (obj.forEach) {
                     obj.forEach(callback);
@@ -2633,9 +2661,9 @@ define('collection',['utils', 'spritesheet', 'spriteobject', 'camera'], function
             var xArea = Math.floor(camPos.x / areaSize);
             var yArea = Math.floor(camPos.y / areaSize);
             var range = 1;
-            for (var y = yArea - range; y <= yArea + range; y++) {
-                for (var x = xArea - range; x <= xArea + range; x++) {
-                    var area = spriteMap[x + "_" + y];
+            for (var _y2 = yArea - range; _y2 <= yArea + range; _y2++) {
+                for (var _x2 = xArea - range; _x2 <= xArea + range; _x2++) {
+                    var area = spriteMap[_x2 + "_" + _y2];
                     if (area) {
                         for (var a in area) {
                             var sprites = area[a];
