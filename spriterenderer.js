@@ -10,12 +10,12 @@ define([
 ], function(THREE, Utils, SpriteObject, SpriteSheet, ObjectPool, Camera, turboSort, Shader) {
     'use strict';
 
-    var planeGeometry = new THREE.PlaneBufferGeometry(1, 1);
-    var pointCount = planeGeometry.attributes.position.count;
-    var indices = planeGeometry.index.array;
-    var spriteRenderers = [];
-    var uniforms = null;
-    var indexProcessor = function(){};
+    const planeGeometry = new THREE.PlaneBufferGeometry(1, 1);
+    const pointCount = planeGeometry.attributes.position.count;
+    const indices = planeGeometry.index.array;
+    let spriteRenderers = [];
+    let uniforms = null;
+    let indexProcessor = function(){};
 
     /**
      *  CLASS DEFINITIONS
@@ -28,14 +28,14 @@ define([
         this.mesh = createMesh(this);
         this.curvature = 0;
 
-        var self = this;
+        const self = this;
 
         this.display = function (spriteObject) {
-            var image = null;
-            var cut = spriteObject && spriteObject.visible !== false
+            let image = null;
+            const cut = spriteObject && spriteObject.visible !== false
                 ? SpriteSheet.getCut(spriteObject.img) : null;
             if (cut && cut.ready) {
-                var index = self.imageCount;
+                const index = self.imageCount;
                 if(!self.images[index]) {
                     self.images[index] = new SpriteImage();
                     self.images[index].index = index;
@@ -43,11 +43,11 @@ define([
 
                 image = self.images[index];
 
-                for (var j=0; j<indices.length; j++) {
+                for (let j=0; j<indices.length; j++) {
                     image.indexArray[j] = indices[j] + image.index*4;
                 }
 
-                var quat = spriteObject.hasQuaternionArray ? spriteObject.quaternionArray : Camera.getCameraQuaternionData().array;
+                const quat = spriteObject.hasQuaternionArray ? spriteObject.quaternionArray : Camera.getCameraQuaternionData().array;
                 if (image.quaternionArray[0] !== quat[0]
                     || image.quaternionArray[1] !== quat[1]
                     || image.quaternionArray[2] !== quat[2]
@@ -77,10 +77,9 @@ define([
                     image.size[0] = spriteObject.size[0];
                     image.size[1] = spriteObject.size[1];
                     image.size[2] = spriteObject.size[2];
-                    var vertices = planeGeometry.attributes.position.array;
-                    for(var v=0; v<vertices.length; v++) {
-                        image.vertices[v]
-                            = vertices[v] * spriteObject.size[v%3] + image.spotArray[v];
+                    const vertices = planeGeometry.attributes.position.array;
+                    for(let v=0; v<vertices.length; v++) {
+                        image.vertices[v] = vertices[v] * spriteObject.size[v%3] + image.spotArray[v];
                     }
                     image.verticesDirty = true;
                 }
@@ -151,8 +150,8 @@ define([
     }
 
     function createMesh(spriteRenderer) {
-        var geometry = new THREE.BufferGeometry();
-        var vertices = new Float32Array( [
+        const geometry = new THREE.BufferGeometry();
+        const vertices = new Float32Array( [
             -1.0, -1.0,  1.0,
             1.0, -1.0,  1.0,
             1.0,  1.0,  1.0,
@@ -162,7 +161,7 @@ define([
             -1.0, -1.0,  1.0
         ] );
         geometry.addAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
-        var mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
+        const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
 
         mesh.material = new THREE.ShaderMaterial( {
             uniforms: uniforms = {
@@ -191,8 +190,8 @@ define([
     }
 
     function sortImages(images,count) {
-        var camera = Camera.getCamera();
-        for (var i = 0; i < count; i++) {
+        const camera = Camera.getCamera();
+        for (let i = 0; i < count; i++) {
             images[i].zIndex = -camera.position.distanceToManhattan(images[i].position);
         }
         indexProcessor(images, count);
@@ -208,12 +207,12 @@ define([
     }
 
     function render() {
-        var imageCount = this.imageCount;
-        var pointCount = planeGeometry.attributes.position.count;
-        var previousAttribute;
+        const imageCount = this.imageCount;
+        const pointCount = planeGeometry.attributes.position.count;
+        let previousAttribute;
 
-        var mesh = this.mesh;
-        var geometry = mesh.geometry;
+        const mesh = this.mesh;
+        const geometry = mesh.geometry;
         if (!geometry.attributes.position || geometry.attributes.position.count < imageCount * pointCount) {
             previousAttribute = geometry.attributes.position;
             geometry.attributes.position = new THREE.BufferAttribute(
@@ -270,7 +269,7 @@ define([
         }
         if (!geometry.index || geometry.index.count < imageCount * planeGeometry.index.array.length) {
             previousAttribute = geometry.index;
-            var indices = planeGeometry.index.array;
+            const indices = planeGeometry.index.array;
             geometry.index = new THREE.BufferAttribute(new Uint16Array(imageCount * indices.length), 1);
             if(previousAttribute)
                 geometry.index.copyArray(previousAttribute.array);
@@ -283,31 +282,31 @@ define([
     function updateGraphics() {
         this.render();
 
-        var images = this.images;
-        var imageOrder = this.imageOrder;
-        var imageCount = this.imageCount;
-        var geometry = this.mesh.geometry;
-        var geo_quaternion = geometry.attributes.quaternion.array;
-        var geo_spot = geometry.attributes.spot.array;
-        var geo_pos = geometry.attributes.position.array;
-        var geo_tex = geometry.attributes.tex.array;
-        var geo_light = geometry.attributes.light.array;
-        var geo_uv = geometry.attributes.uv.array;
-        var geo_index = geometry.index.array;
+        const images = this.images;
+        const imageOrder = this.imageOrder;
+        const imageCount = this.imageCount;
+        const geometry = this.mesh.geometry;
+        const geo_quaternion = geometry.attributes.quaternion.array;
+        const geo_spot = geometry.attributes.spot.array;
+        const geo_pos = geometry.attributes.position.array;
+        const geo_tex = geometry.attributes.tex.array;
+        const geo_light = geometry.attributes.light.array;
+        const geo_uv = geometry.attributes.uv.array;
+        const geo_index = geometry.index.array;
 
-        var quatChanged = false;
-        var positionChanged = false;
-        var texChanged = false;
-        var verticesChanged = false;
-        var uvChanged = false;
-        var lightChanged = false;
+        let quatChanged = false;
+        let positionChanged = false;
+        let texChanged = false;
+        let verticesChanged = false;
+        let uvChanged = false;
+        let lightChanged = false;
 
-        for(var i=0;i<imageCount;i++) {
-            var image = images[i];
-            var index = image.index;
+        for(let i=0;i<imageCount;i++) {
+            const image = images[i];
+            const index = image.index;
 
             if (image.quatDirty) {
-                var quaternionArray = image.quaternionArray;
+                const quaternionArray = image.quaternionArray;
                 geo_quaternion.set(quaternionArray, index * 16);
                 image.quatDirty = false;
                 quatChanged = true;
@@ -344,7 +343,7 @@ define([
             }
         }
 
-        for(i=0;i<imageCount;i++) {
+        for(let i=0;i<imageCount;i++) {
             geo_index.set(imageOrder[i].indexArray, i * 6);
         }
 
@@ -375,7 +374,7 @@ define([
     }
 
     function destroyEverything() {
-        for(var i=0; i<spriteRenderers.length; i++) {
+        for(let i=0; i<spriteRenderers.length; i++) {
             spriteRenderers[i].destroy();
         }
         spriteRenderers.length = 0;

@@ -191,7 +191,7 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'objectpool', 'camera
     function render() {
         var imageCount = this.imageCount;
         var pointCount = planeGeometry.attributes.position.count;
-        var previousAttribute;
+        var previousAttribute = void 0;
 
         var mesh = this.mesh;
         var geometry = mesh.geometry;
@@ -233,8 +233,8 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'objectpool', 'camera
         }
         if (!geometry.index || geometry.index.count < imageCount * planeGeometry.index.array.length) {
             previousAttribute = geometry.index;
-            var indices = planeGeometry.index.array;
-            geometry.index = new THREE.BufferAttribute(new Uint16Array(imageCount * indices.length), 1);
+            var _indices = planeGeometry.index.array;
+            geometry.index = new THREE.BufferAttribute(new Uint16Array(imageCount * _indices.length), 1);
             if (previousAttribute) geometry.index.copyArray(previousAttribute.array);
             geometry.index.setDynamic(true);
         }
@@ -306,8 +306,8 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'objectpool', 'camera
             }
         }
 
-        for (i = 0; i < imageCount; i++) {
-            geo_index.set(imageOrder[i].indexArray, i * 6);
+        for (var _i = 0; _i < imageCount; _i++) {
+            geo_index.set(imageOrder[_i].indexArray, _i * 6);
         }
 
         if (geometry.drawRange.start !== 0 || geometry.drawRange.count !== imageCount * planeGeometry.index.count) {

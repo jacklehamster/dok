@@ -3,7 +3,7 @@ define(function() {
      *  FUNCTION DEFINITIONS
      */
     function fixPath() {
-        var regex = /\/$|index\.html$|next\.html$/g;
+        const regex = /\/$|index\.html$|next\.html$/g;
         if (!regex.exec(location.pathname)) {
             window.history.pushState(null,"", location.pathname+"/"+location.search+location.hash);
         }
@@ -19,8 +19,8 @@ define(function() {
 
     function handleError(error, soft) {
         if(Array.isArray(error)) {
-            var array = [];
-            for(var i=0;i<error.length;i++) {
+            const array = [];
+            for(let i=0;i<error.length;i++) {
                 array.push(error[i]);
                 array.push("\n ");
             }
@@ -46,8 +46,8 @@ define(function() {
     function expectParams(args) {
         assert(typeof(args) === 'object', "Pass 'arguments' to expectParams");
 
-        for(var i=1; i<arguments.length; i++) {
-            var type = args[i-1]===null? 'null' : Array.isArray(args[i-1])?'array' : typeof(args[i-1]);
+        for(let i=1; i<arguments.length; i++) {
+            const type = args[i-1]===null? 'null' : Array.isArray(args[i-1])?'array' : typeof(args[i-1]);
             assert(
                 arguments[i].split("|").indexOf(type)>=0,
                 ["Expected argument "+(i-1)+" to be "+arguments[i]+" NOT "+type, args]
@@ -58,8 +58,8 @@ define(function() {
     function checkParams(args) {
         assert(typeof(args) === 'object', "Pass 'arguments' to expectParams");
 
-        for(var i=1; i<arguments.length; i++) {
-            var type = args[i-1]===null? 'null' : Array.isArray(args[i-1])?'array' : typeof(args[i-1]);
+        for(let i=1; i<arguments.length; i++) {
+            const type = args[i-1]===null? 'null' : Array.isArray(args[i-1])?'array' : typeof(args[i-1]);
             if(arguments[i].split("|").indexOf(type)<0) {
                 return false;
             }
@@ -81,7 +81,7 @@ define(function() {
         document.onbeforeunload = window.onbeforeunload = cleanUp;
     }
 
-    var destroyEverything = function() {};
+    let destroyEverything = function() {};
     function onDestroy(callback) {
         destroyEverything = Utils.combineMethods(callback, destroyEverything);
     }
@@ -118,7 +118,7 @@ define(function() {
     function fill_compat(value,start,end) {
         start = start||0;
         end = end||this.length;
-        for(var i=start;i<end;i++) {
+        for(let i=start;i<end;i++) {
             this[i] = value;
         }
         return this;
@@ -134,14 +134,14 @@ define(function() {
 
         } )();
 
-        var timeout, time = 0;
+        let timeout, time = 0;
         function requestAnimationFrame_compat( callback) {
             timeout = setTimeout( timeoutCallback, 1000 / 60 , callback);
         }
 
         function timeoutCallback(callback) {
             clearTimeout(timeout);
-            var dt = Date.now() - time;
+            const dt = Date.now() - time;
             callback(dt);
             time = Date.now();
         }
@@ -150,7 +150,7 @@ define(function() {
     function loadAsyncHelper(src, result, index, callback, binary, method, data) {
         loadAsync(src, function(value) {
             result[index] = value;
-            for(var i=0; i<result.length; i++) {
+            for(let i=0; i<result.length; i++) {
                 if(result[i]===undefined) {
                     return;
                 }
@@ -161,17 +161,17 @@ define(function() {
 
     function loadAsync(src, callback, binary, method, data) {
         if(Array.isArray(src)) {
-            var result = new Array(src.length);
-            for(var i=0; i<src.length; i++) {
+            const result = new Array(src.length);
+            for(let i=0; i<src.length; i++) {
                 loadAsyncHelper(src[i], result, i, callback);
             }
 
         } else {
-            var xhr = new XMLHttpRequest();
+            const xhr = new XMLHttpRequest();
             xhr.overrideMimeType(binary ? "text/plain; charset=x-user-defined" : "text/plain; charset=UTF-8");
             xhr.open(method?method:"GET", src, true);
             xhr.addEventListener('load',
-                function (e) {
+                function () {
                     if (xhr.readyState === 4) {
                         if (xhr.status === 200) {
                             callback(xhr.responseText);
@@ -206,7 +206,7 @@ define(function() {
         this.bottom = 1;
         this.direction = 0; //  0-right, 1-bottom, 2-left, 3-up
 
-        var point = [0,0];
+        let point = [0,0];
 
         this.reset = function() {
             this.x = 0;
@@ -225,7 +225,7 @@ define(function() {
         };
 
         this.next = function () {
-            var point = this.current();
+            let point = this.current();
             switch(this.direction) {
                 case 0:
                     this.x++;
@@ -260,13 +260,6 @@ define(function() {
         }
     }
 
-    function addLinkToHeadTag(rel, href) {
-        var link = document.createElement("link");
-        link.setAttribute("rel", rel);
-        link.href = href;
-        document.head.appendChild(link);
-    }
-
     function getTitle() {
         return title;
     }
@@ -274,7 +267,7 @@ define(function() {
     /**
      *  PUBLIC DECLARATIONS
      */
-    var title = "";
+    let title = "";
 
 
     function Utils() {
@@ -299,7 +292,17 @@ define(function() {
     setupExit();
     definePrototypes();
 
-/*    loadAsync("package.json", function(str) {
+/*
+
+     function addLinkToHeadTag(rel, href) {
+         const link = document.createElement("link");
+         link.setAttribute("rel", rel);
+         link.href = href;
+         document.head.appendChild(link);
+     }
+
+
+     loadAsync("package.json", function(str) {
         try {
             var object = JSON.parse(str);
             var icon = object.window.icon || require.toUrl('images/logo.ico');

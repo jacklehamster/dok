@@ -127,7 +127,7 @@ define(function () {
             return window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || requestAnimationFrame_compat;
         }();
 
-        var timeout,
+        var timeout = void 0,
             time = 0;
         function requestAnimationFrame_compat(callback) {
             timeout = setTimeout(timeoutCallback, 1000 / 60, callback);
@@ -163,7 +163,7 @@ define(function () {
             var xhr = new XMLHttpRequest();
             xhr.overrideMimeType(binary ? "text/plain; charset=x-user-defined" : "text/plain; charset=UTF-8");
             xhr.open(method ? method : "GET", src, true);
-            xhr.addEventListener('load', function (e) {
+            xhr.addEventListener('load', function () {
                 if (xhr.readyState === 4) {
                     if (xhr.status === 200) {
                         callback(xhr.responseText);
@@ -249,13 +249,6 @@ define(function () {
         };
     }
 
-    function addLinkToHeadTag(rel, href) {
-        var link = document.createElement("link");
-        link.setAttribute("rel", rel);
-        link.href = href;
-        document.head.appendChild(link);
-    }
-
     function getTitle() {
         return title;
     }
@@ -287,7 +280,17 @@ define(function () {
     setupExit();
     definePrototypes();
 
-    /*    loadAsync("package.json", function(str) {
+    /*
+    
+         function addLinkToHeadTag(rel, href) {
+             const link = document.createElement("link");
+             link.setAttribute("rel", rel);
+             link.href = href;
+             document.head.appendChild(link);
+         }
+    
+    
+         loadAsync("package.json", function(str) {
             try {
                 var object = JSON.parse(str);
                 var icon = object.window.icon || require.toUrl('images/logo.ico');
