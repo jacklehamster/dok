@@ -32,8 +32,14 @@ define(['threejs', 'objectpool'], function (THREE, ObjectPool) {
     SpriteObject.prototype.img = -1;
     SpriteObject.prototype.offset = null;
 
+    var objectPool = new ObjectPool(SpriteObject);
+
     SpriteObject.create = function (x, y, z, width, height, quaternionArray, light, img) {
-        return ObjectPool.create(SpriteObject).init(x, y, z, width, height, quaternionArray, light, img);
+        return objectPool.create().init(x, y, z, width, height, quaternionArray, light, img);
+    };
+
+    SpriteObject.clear = function () {
+        objectPool.recycleAll();
     };
 
     return SpriteObject;

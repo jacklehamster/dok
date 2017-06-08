@@ -1,6 +1,6 @@
 'use strict';
 
-define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'objectpool', 'camera', 'turbosort', 'shader'], function (THREE, Utils, SpriteObject, SpriteSheet, ObjectPool, Camera, turboSort, Shader) {
+define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort', 'shader'], function (THREE, Utils, SpriteObject, SpriteSheet, Camera, turboSort, Shader) {
     'use strict';
 
     var planeGeometry = new THREE.PlaneBufferGeometry(1, 1);
@@ -127,7 +127,7 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'objectpool', 'camera
 
     function clear() {
         this.imageCount = 0;
-        ObjectPool.recycleAll(SpriteObject);
+        SpriteObject.clear();
     }
 
     function createMesh(spriteRenderer) {

@@ -108,8 +108,8 @@ define(['threejs', 'utils', 'gifhandler', 'loader', 'packer'], function (THREE, 
     }
 
     function drawGif(gif, frame, canvas) {
-        canvas.width = gif.header.width;
-        canvas.height = gif.header.height;
+        canvas.width = gif.width;
+        canvas.height = gif.height;
         initCanvas(canvas);
         canvas.getContext("2d").drawImage(gif.canvases[frame], 0, 0);
         canvas.dispatchEvent(customEvent("update"));

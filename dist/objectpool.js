@@ -29,25 +29,9 @@ define(['utils'], function (Utils) {
         this.index = 0;
     }
 
-    function pool_create(classObject) {
-        if (!classObject.pool) {
-            classObject.pool = new ObjectPool(classObject);
-        }
-        return classObject.pool.create();
-    }
-
-    function pool_recycleAll(classObject) {
-        if (classObject.pool) {
-            classObject.pool.recycleAll();
-        }
-    }
-
     /**
      *  PUBLIC DECLARATIONS
      */
-    ObjectPool.create = pool_create;
-    ObjectPool.recycleAll = pool_recycleAll;
-
     return ObjectPool;
 });
 //# sourceMappingURL=objectpool.js.map

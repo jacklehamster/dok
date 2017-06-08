@@ -110,6 +110,30 @@ define('utils', [], function () {
             Uint32Array.prototype.fill = fill_compat;
         }
 
+        if (typeof Uint16Array.prototype.fill === 'undefined') {
+            Uint16Array.prototype.fill = fill_compat;
+        }
+
+        function fill_compat(value, start, end) {
+            start = start || 0;
+            end = end || this.length;
+            for (var i = start; i < end; i++) {
+                this[i] = value;
+            }
+            return this;
+        }
+
+        function splatter(array, offset) {
+            for (var i = this.length - 1; i >= 0; i--) {
+                array[offset + i] = this[i];
+            }
+            return this;
+        }
+
+        Float32Array.prototype.splatter = splatter;
+        Uint32Array.prototype.splatter = splatter;
+        Uint16Array.prototype.splatter = splatter;
+
         Array.prototype.getFrame = function (index) {
             index = index | 0;
             return this[index % this.length];
@@ -117,15 +141,6 @@ define('utils', [], function () {
         Number.prototype.getFrame = function () {
             return this;
         };
-    }
-
-    function fill_compat(value, start, end) {
-        start = start || 0;
-        end = end || this.length;
-        for (var i = start; i < end; i++) {
-            this[i] = value;
-        }
-        return this;
     }
 
     function setupRequestAnimationFrame() {
@@ -901,11 +916,10 @@ define('gifHandler', ['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Util
     }
 
     function createGif(src) {
-        var renderTime = 0;
-        var currentFrame = 0;
-        var maxFrameCompleted = 0;
-
         var gifInfo = {
+            currentFrame: 0,
+            maxFrameCompleted: 0,
+            renderTime: 0,
             framesProcessed: 0,
             header: null,
             frameInfos: [],
@@ -943,11 +957,11 @@ define('gifHandler', ['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Util
                         if (self.callbacks[frameInfo.frame]) {
                             self.callbacks[frameInfo.frame]();
                         }
-                        maxFrameCompleted = frameInfo.frame;
+                        self.maxFrameCompleted = frameInfo.frame;
                         self.frameInfos[frameInfo.frame].ready = true;
                         processNext();
                     });
-                    currentFrame = this.framesProcessed;
+                    this.currentFrame = this.framesProcessed;
                     this.framesProcessed++;
                     //                    document.body.appendChild(canvas);
                 }
@@ -981,12 +995,12 @@ define('gifHandler', ['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Util
                 this.processNextFrame();
             },
             getFrame: function getFrame() {
-                if (this.block && Loop.time > renderTime) {
-                    currentFrame = (currentFrame + 1) % this.frameInfos.length;
+                if (this.block && Loop.time > this.renderTime) {
+                    this.currentFrame = (this.currentFrame + 1) % this.frameInfos.length;
                     var totalAnimationTime = this.frameInfos[this.frameInfos.length - 1].cycleTime;
-                    renderTime = Math.floor(Loop.time / totalAnimationTime) * totalAnimationTime + this.frameInfos[currentFrame].cycleTime;
+                    this.renderTime = Math.floor(Loop.time / totalAnimationTime) * totalAnimationTime + this.frameInfos[this.currentFrame].cycleTime;
                 }
-                return Math.min(currentFrame, maxFrameCompleted);
+                return Math.min(this.currentFrame, this.maxFrameCompleted);
             },
             eof: function eof(block) {
                 this.block = block;
@@ -1371,11 +1385,10 @@ define('gifhandler', ['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Util
     }
 
     function createGif(src) {
-        var renderTime = 0;
-        var currentFrame = 0;
-        var maxFrameCompleted = 0;
-
         var gifInfo = {
+            currentFrame: 0,
+            maxFrameCompleted: 0,
+            renderTime: 0,
             framesProcessed: 0,
             header: null,
             frameInfos: [],
@@ -1413,11 +1426,11 @@ define('gifhandler', ['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Util
                         if (self.callbacks[frameInfo.frame]) {
                             self.callbacks[frameInfo.frame]();
                         }
-                        maxFrameCompleted = frameInfo.frame;
+                        self.maxFrameCompleted = frameInfo.frame;
                         self.frameInfos[frameInfo.frame].ready = true;
                         processNext();
                     });
-                    currentFrame = this.framesProcessed;
+                    this.currentFrame = this.framesProcessed;
                     this.framesProcessed++;
                     //                    document.body.appendChild(canvas);
                 }
@@ -1451,12 +1464,12 @@ define('gifhandler', ['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Util
                 this.processNextFrame();
             },
             getFrame: function getFrame() {
-                if (this.block && Loop.time > renderTime) {
-                    currentFrame = (currentFrame + 1) % this.frameInfos.length;
+                if (this.block && Loop.time > this.renderTime) {
+                    this.currentFrame = (this.currentFrame + 1) % this.frameInfos.length;
                     var totalAnimationTime = this.frameInfos[this.frameInfos.length - 1].cycleTime;
-                    renderTime = Math.floor(Loop.time / totalAnimationTime) * totalAnimationTime + this.frameInfos[currentFrame].cycleTime;
+                    this.renderTime = Math.floor(Loop.time / totalAnimationTime) * totalAnimationTime + this.frameInfos[this.currentFrame].cycleTime;
                 }
-                return Math.min(currentFrame, maxFrameCompleted);
+                return Math.min(this.currentFrame, this.maxFrameCompleted);
             },
             eof: function eof(block) {
                 this.block = block;
@@ -1815,7 +1828,7 @@ define('spritesheet', ['threejs', 'utils', 'gifhandler', 'loader', 'packer'], fu
 
     function getCut(index) {
         var cut = cutArray[index];
-        var frame = cut && cut.animated ? GifHandler.getGif(cut.url).getFrame() : 0;
+        var frame = cut && cut.gif ? cut.gif.getFrame() : 0;
         if (cut && cut.cut[frame] && cut.cut[frame].ready) {
             return cut.cut[frame];
         }
@@ -1866,7 +1879,7 @@ define('spritesheet', ['threejs', 'utils', 'gifhandler', 'loader', 'packer'], fu
 
             var cutcut = [uvX, 1 - uvY - uvH, uvX + uvW, 1 - uvY];
 
-            cut.animated = canvas.getAttribute("animated") === "true";
+            cut.gif = canvas.getAttribute("animated") === "true" ? GifHandler.getGif(cut.url) : null;
             cut.cut[frame].baseUrl = cut.baseUrl = canvas.getAttribute("base-url");
             cut.cut[frame].tex = slot.tex;
             cut.cut[frame].uv = new Float32Array(uvOrder.length);
@@ -2191,10 +2204,7 @@ define('spriterenderer', ['threejs', 'utils', 'spriteobject', 'spritesheet', 'ob
 
                 var quat = spriteObject.hasQuaternionArray ? spriteObject.quaternionArray : Camera.getCameraQuaternionData().array;
                 if (image.quaternionArray[0] !== quat[0] || image.quaternionArray[1] !== quat[1] || image.quaternionArray[2] !== quat[2] || image.quaternionArray[3] !== quat[3]) {
-                    image.quaternionArray.set(quat);
-                    image.quaternionArray.set(quat, 4);
-                    image.quaternionArray.set(quat, 8);
-                    image.quaternionArray.set(quat, 12);
+                    quat.splatter(image.quaternionArray, 0).splatter(image.quaternionArray, 4).splatter(image.quaternionArray, 8).splatter(image.quaternionArray, 12);
                     image.quatDirty = true;
                 }
 
@@ -2419,26 +2429,25 @@ define('spriterenderer', ['threejs', 'utils', 'spriteobject', 'spritesheet', 'ob
             var index = image.index;
 
             if (image.quatDirty) {
-                var quaternionArray = image.quaternionArray;
-                geo_quaternion.set(quaternionArray, index * 16);
+                image.quaternionArray.splatter(geo_quaternion, index * 16);
                 image.quatDirty = false;
                 quatChanged = true;
             }
 
             if (image.positionDirty) {
-                geo_spot.set(image.spotArray, index * 12);
+                image.spotArray.splatter(geo_spot, index * 12);
                 image.positionDirty = false;
                 positionChanged = true;
             }
 
             if (image.verticesDirty) {
-                geo_pos.set(image.vertices, index * 12);
+                image.vertices.splatter(geo_pos, index * 12);
                 image.verticesDirty = false;
                 verticesChanged = true;
             }
 
             if (image.uvDirty) {
-                geo_uv.set(image.uv, index * 8);
+                image.uv.splatter(geo_uv, index * 8);
                 image.uvDirty = false;
                 uvChanged = true;
             }
@@ -2457,7 +2466,7 @@ define('spriterenderer', ['threejs', 'utils', 'spriteobject', 'spritesheet', 'ob
         }
 
         for (var _i = 0; _i < imageCount; _i++) {
-            geo_index.set(imageOrder[_i].indexArray, _i * 6);
+            imageOrder[_i].indexArray.splatter(geo_index, _i * 6);
         }
 
         if (geometry.drawRange.start !== 0 || geometry.drawRange.count !== imageCount * planeGeometry.index.count) {

@@ -316,6 +316,7 @@ define(function() {
     Utils.Roundabout = Roundabout;
     Utils.getTitle = getTitle;
     Utils.makeArray = makeArray;
+    Utils.nop = function(){};
 
     /**
      *   PROCESSES

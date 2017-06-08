@@ -18,12 +18,14 @@ define(['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Utils, Loop, gifWo
 
     function getGif(src) {
         if (!gifs[src]) {
-            gifs[src] = createGif(src);
+            gifs[src] = new GifImage(src);
         }
         return gifs[src];
     }
 
-    function createGif(src) {
+    function GifImage(src) {
+        var self = this;
+
         var gifInfo = {
             currentFrame: 0,
             maxFrameCompleted: 0,
@@ -76,6 +78,8 @@ define(['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Utils, Loop, gifWo
             },
             hdr: function hdr(_hdr) {
                 this.header = _hdr;
+                self.width = this.header.width;
+                self.height = this.header.height;
             },
             gce: function gce(_gce) {
                 if (this.frameInfos.length == 0 || this.frameInfos[this.frameInfos.length - 1].gce) {
@@ -102,14 +106,6 @@ define(['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Utils, Loop, gifWo
                 this.frameInfos[this.frameInfos.length - 1].img = _img;
                 this.processNextFrame();
             },
-            getFrame: function getFrame() {
-                if (this.block && Loop.time > this.renderTime) {
-                    this.currentFrame = (this.currentFrame + 1) % this.frameInfos.length;
-                    var totalAnimationTime = this.frameInfos[this.frameInfos.length - 1].cycleTime;
-                    this.renderTime = Math.floor(Loop.time / totalAnimationTime) * totalAnimationTime + this.frameInfos[this.currentFrame].cycleTime;
-                }
-                return Math.min(this.currentFrame, this.maxFrameCompleted);
-            },
             eof: function eof(block) {
                 this.block = block;
                 this.processNextFrame();
@@ -120,7 +116,27 @@ define(['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Utils, Loop, gifWo
             JSGif.parseGIF(new JSGif.Stream(content), gifInfo);
         }, true);
 
-        return gifInfo;
+        this.frameInfos = gifInfo.frameInfos;
+        this.canvases = gifInfo.canvases;
+        this.callbacks = gifInfo.callbacks;
+        this.gifInfo = gifInfo;
+    }
+    GifImage.prototype.width = 0;
+    GifImage.prototype.height = 0;
+    GifImage.prototype.frameInfos = [];
+    GifImage.prototype.canvases = [];
+    GifImage.prototype.callbacks = [];
+    GifImage.prototype.gifInfo = null;
+    GifImage.prototype.getFrame = GifImage_getFrame;
+
+    function GifImage_getFrame() {
+        var gifInfo = this.gifInfo;
+        if (gifInfo.block && Loop.time > gifInfo.renderTime) {
+            gifInfo.currentFrame = (gifInfo.currentFrame + 1) % this.frameInfos.length;
+            var totalAnimationTime = this.frameInfos[this.frameInfos.length - 1].cycleTime;
+            gifInfo.renderTime = Math.floor(Loop.time / totalAnimationTime) * totalAnimationTime + this.frameInfos[gifInfo.currentFrame].cycleTime;
+        }
+        return Math.min(gifInfo.currentFrame, gifInfo.maxFrameCompleted);
     }
 
     function destroyEverything() {

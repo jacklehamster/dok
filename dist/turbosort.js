@@ -37,12 +37,12 @@ define(function () {
             }
             previousNum = index;
         }
-        getMinMax.result.min = minNum;
-        getMinMax.result.max = maxNum;
-        getMinMax.result.inOrder = inOrder;
-        return getMinMax.result;
+        min_max_result.min = minNum;
+        min_max_result.max = maxNum;
+        min_max_result.inOrder = inOrder;
+        return min_max_result;
     }
-    getMinMax.result = {
+    var min_max_result = {
         min: 0,
         max: 0,
         inOrder: false
@@ -71,7 +71,7 @@ define(function () {
     }
 
     function turboSortHelper(array, offset, length) {
-        if (length < 500) {
+        if (length < 200) {
             quickSortHelper(array, offset, offset + length - 1, compareIndex);
             return;
         }
@@ -123,21 +123,16 @@ define(function () {
     }
 
     function swap(array, a, b) {
-        if (a !== b) {
-            var temp = array[a];
-            array[a] = array[b];
-            array[b] = temp;
-        }
+        var temp = array[a];
+        array[a] = array[b];
+        array[b] = temp;
     }
 
     function quickSortHelper(arr, left, right, compare) {
-        var len = arr.length,
-            pivot,
-            partitionIndex;
+        var len = arr.length;
 
         if (left < right) {
-            pivot = right;
-            partitionIndex = partition(arr, pivot, left, right, compare);
+            var partitionIndex = partition(arr, right, left, right, compare);
 
             //sort left and right
             quickSortHelper(arr, left, partitionIndex - 1, compare);
@@ -147,8 +142,8 @@ define(function () {
     }
 
     function partition(arr, pivot, left, right, compare) {
-        var pivotValue = arr[pivot],
-            partitionIndex = left;
+        var pivotValue = arr[pivot];
+        var partitionIndex = left;
 
         for (var i = left; i < right; i++) {
             if (compare(arr[i], pivotValue) < 0) {

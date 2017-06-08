@@ -3,11 +3,10 @@ define([
     'utils',
     'spriteobject',
     'spritesheet',
-    'objectpool',
     'camera',
     'turbosort',
     'shader',
-], function(THREE, Utils, SpriteObject, SpriteSheet, ObjectPool, Camera, turboSort, Shader) {
+], function(THREE, Utils, SpriteObject, SpriteSheet, Camera, turboSort, Shader) {
     'use strict';
 
     const planeGeometry = new THREE.PlaneBufferGeometry(1, 1);
@@ -146,7 +145,7 @@ define([
 
     function clear() {
         this.imageCount = 0;
-        ObjectPool.recycleAll(SpriteObject);
+        SpriteObject.clear();
     }
 
     function createMesh(spriteRenderer) {

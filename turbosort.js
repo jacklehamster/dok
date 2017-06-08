@@ -16,13 +16,13 @@ define(function() {
     }
 
     function getMinMax(array, offset, length) {
-        var firstIndex = indexFunction(array[offset]);
-        var minNum = firstIndex;
-        var maxNum = firstIndex;
-        var previousNum = firstIndex;
-        var inOrder = true;
-        for(var i=1; i<length; i++) {
-            var index = indexFunction(array[offset+i]);
+        let firstIndex = indexFunction(array[offset]);
+        let minNum = firstIndex;
+        let maxNum = firstIndex;
+        let previousNum = firstIndex;
+        let inOrder = true;
+        for(let i=1; i<length; i++) {
+            const index = indexFunction(array[offset+i]);
             if(previousNum > index) {
                 inOrder = false;
                 if(index < minNum) {
@@ -35,12 +35,12 @@ define(function() {
             }
             previousNum = index;
         }
-        getMinMax.result.min = minNum;
-        getMinMax.result.max = maxNum;
-        getMinMax.result.inOrder = inOrder;
-        return getMinMax.result;
+        min_max_result.min = minNum;
+        min_max_result.max = maxNum;
+        min_max_result.inOrder = inOrder;
+        return min_max_result;
     }
-    getMinMax.result = {
+    const min_max_result = {
         min: 0,
         max: 0,
         inOrder: false,
@@ -69,7 +69,7 @@ define(function() {
     }
 
     function turboSortHelper(array, offset, length) {
-        if(length < 500) {
+        if(length < 200) {
             quickSortHelper(array, offset, offset+length-1, compareIndex);
             return;
         }
@@ -120,22 +120,16 @@ define(function() {
     }
 
     function swap(array, a, b) {
-        if(a !== b) {
-            var temp = array[a];
-            array[a] = array[b];
-            array[b] = temp;
-        }
+        const temp = array[a];
+        array[a] = array[b];
+        array[b] = temp;
     }
 
     function quickSortHelper(arr, left, right, compare){
-        var len = arr.length,
-            pivot,
-            partitionIndex;
-
+        const len = arr.length;
 
         if(left < right){
-            pivot = right;
-            partitionIndex = partition(arr, pivot, left, right, compare);
+            const partitionIndex = partition(arr, right, left, right, compare);
 
             //sort left and right
             quickSortHelper(arr, left, partitionIndex - 1, compare);
@@ -145,10 +139,10 @@ define(function() {
     }
 
     function partition(arr, pivot, left, right, compare){
-        var pivotValue = arr[pivot],
-            partitionIndex = left;
+        const pivotValue = arr[pivot];
+        let partitionIndex = left;
 
-        for(var i = left; i < right; i++){
+        for(let i = left; i < right; i++){
             if(compare(arr[i] , pivotValue)<0){
                 swap(arr, i, partitionIndex);
                 partitionIndex++;
