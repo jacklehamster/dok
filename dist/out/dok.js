@@ -270,7 +270,7 @@ define('utils', [], function () {
         if (dimensions.length > 1) {
             var slice_chunk = dimensions.slice(1);
             for (var i = 0; i < array.length; i++) {
-                array[i] = slice_chunk(slice_chunk);
+                array[i] = makeArrayHelper(slice_chunk);
             }
         }
         return array;

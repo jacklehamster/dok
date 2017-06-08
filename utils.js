@@ -105,6 +105,30 @@ define(function() {
             Uint32Array.prototype.fill = fill_compat;
         }
 
+        if (typeof(Uint16Array.prototype.fill) === 'undefined') {
+            Uint16Array.prototype.fill = fill_compat;
+        }
+
+        function fill_compat(value,start,end) {
+            start = start||0;
+            end = end||this.length;
+            for(let i=start;i<end;i++) {
+                this[i] = value;
+            }
+            return this;
+        }
+
+        function splatter(array, offset) {
+            for(let i = this.length-1; i>=0; i--) {
+                array[offset + i] = this[i];
+            }
+            return this;
+        }
+
+        Float32Array.prototype.splatter = splatter;
+        Uint32Array.prototype.splatter = splatter;
+        Uint16Array.prototype.splatter = splatter;
+
         Array.prototype.getFrame = function (index) {
             index = index|0;
             return this[index % this.length];
@@ -112,16 +136,6 @@ define(function() {
         Number.prototype.getFrame = function () {
             return this;
         }
-
-    }
-
-    function fill_compat(value,start,end) {
-        start = start||0;
-        end = end||this.length;
-        for(let i=start;i<end;i++) {
-            this[i] = value;
-        }
-        return this;
     }
 
     function setupRequestAnimationFrame() {
@@ -274,7 +288,7 @@ define(function() {
         if(dimensions.length > 1) {
             const slice_chunk = dimensions.slice(1);
             for(let i=0; i<array.length; i++) {
-                array[i] = slice_chunk(slice_chunk);
+                array[i] = makeArrayHelper(slice_chunk);
             }
         }
         return array;

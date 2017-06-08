@@ -41,10 +41,7 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'objectpool', 'camera
 
                 var quat = spriteObject.hasQuaternionArray ? spriteObject.quaternionArray : Camera.getCameraQuaternionData().array;
                 if (image.quaternionArray[0] !== quat[0] || image.quaternionArray[1] !== quat[1] || image.quaternionArray[2] !== quat[2] || image.quaternionArray[3] !== quat[3]) {
-                    image.quaternionArray.set(quat);
-                    image.quaternionArray.set(quat, 4);
-                    image.quaternionArray.set(quat, 8);
-                    image.quaternionArray.set(quat, 12);
+                    quat.splatter(image.quaternionArray, 0).splatter(image.quaternionArray, 4).splatter(image.quaternionArray, 8).splatter(image.quaternionArray, 12);
                     image.quatDirty = true;
                 }
 
@@ -269,26 +266,25 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'objectpool', 'camera
             var index = image.index;
 
             if (image.quatDirty) {
-                var quaternionArray = image.quaternionArray;
-                geo_quaternion.set(quaternionArray, index * 16);
+                image.quaternionArray.splatter(geo_quaternion, index * 16);
                 image.quatDirty = false;
                 quatChanged = true;
             }
 
             if (image.positionDirty) {
-                geo_spot.set(image.spotArray, index * 12);
+                image.spotArray.splatter(geo_spot, index * 12);
                 image.positionDirty = false;
                 positionChanged = true;
             }
 
             if (image.verticesDirty) {
-                geo_pos.set(image.vertices, index * 12);
+                image.vertices.splatter(geo_pos, index * 12);
                 image.verticesDirty = false;
                 verticesChanged = true;
             }
 
             if (image.uvDirty) {
-                geo_uv.set(image.uv, index * 8);
+                image.uv.splatter(geo_uv, index * 8);
                 image.uvDirty = false;
                 uvChanged = true;
             }
@@ -307,7 +303,7 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'objectpool', 'camera
         }
 
         for (var _i = 0; _i < imageCount; _i++) {
-            geo_index.set(imageOrder[_i].indexArray, _i * 6);
+            imageOrder[_i].indexArray.splatter(geo_index, _i * 6);
         }
 
         if (geometry.drawRange.start !== 0 || geometry.drawRange.count !== imageCount * planeGeometry.index.count) {

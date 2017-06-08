@@ -24,11 +24,10 @@ define(['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Utils, Loop, gifWo
     }
 
     function createGif(src) {
-        var renderTime = 0;
-        var currentFrame = 0;
-        var maxFrameCompleted = 0;
-
         var gifInfo = {
+            currentFrame: 0,
+            maxFrameCompleted: 0,
+            renderTime: 0,
             framesProcessed: 0,
             header: null,
             frameInfos: [],
@@ -66,11 +65,11 @@ define(['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Utils, Loop, gifWo
                         if (self.callbacks[frameInfo.frame]) {
                             self.callbacks[frameInfo.frame]();
                         }
-                        maxFrameCompleted = frameInfo.frame;
+                        self.maxFrameCompleted = frameInfo.frame;
                         self.frameInfos[frameInfo.frame].ready = true;
                         processNext();
                     });
-                    currentFrame = this.framesProcessed;
+                    this.currentFrame = this.framesProcessed;
                     this.framesProcessed++;
                     //                    document.body.appendChild(canvas);
                 }
@@ -104,12 +103,12 @@ define(['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Utils, Loop, gifWo
                 this.processNextFrame();
             },
             getFrame: function getFrame() {
-                if (this.block && Loop.time > renderTime) {
-                    currentFrame = (currentFrame + 1) % this.frameInfos.length;
+                if (this.block && Loop.time > this.renderTime) {
+                    this.currentFrame = (this.currentFrame + 1) % this.frameInfos.length;
                     var totalAnimationTime = this.frameInfos[this.frameInfos.length - 1].cycleTime;
-                    renderTime = Math.floor(Loop.time / totalAnimationTime) * totalAnimationTime + this.frameInfos[currentFrame].cycleTime;
+                    this.renderTime = Math.floor(Loop.time / totalAnimationTime) * totalAnimationTime + this.frameInfos[this.currentFrame].cycleTime;
                 }
-                return Math.min(currentFrame, maxFrameCompleted);
+                return Math.min(this.currentFrame, this.maxFrameCompleted);
             },
             eof: function eof(block) {
                 this.block = block;

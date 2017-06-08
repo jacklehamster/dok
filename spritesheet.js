@@ -205,7 +205,7 @@ function( THREE,     Utils,   GifHandler,    Loader,   Packer) {
 
     function getCut(index) {
         var cut = cutArray[index];
-        var frame = cut && cut.animated ? GifHandler.getGif(cut.url).getFrame() : 0;
+        var frame = cut && cut.gif ? cut.gif.getFrame() : 0;
         if(cut && cut.cut[frame] && cut.cut[frame].ready) {
             return cut.cut[frame];
         }
@@ -256,7 +256,7 @@ function( THREE,     Utils,   GifHandler,    Loader,   Packer) {
 
             var cutcut = [ uvX, 1-uvY-uvH, uvX+uvW, 1-uvY ];
 
-            cut.animated = canvas.getAttribute("animated")==="true";
+            cut.gif = canvas.getAttribute("animated")==="true" ? GifHandler.getGif(cut.url) : null;
             cut.cut[frame].baseUrl = cut.baseUrl = canvas.getAttribute("base-url");
             cut.cut[frame].tex = slot.tex;
             cut.cut[frame].uv = new Float32Array(uvOrder.length);
