@@ -45,12 +45,15 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
                     image.quatDirty = true;
                 }
 
-                if (!spriteObject.position.equals(image.position)) {
-                    image.position.copy(spriteObject.position);
-                    image.position.toArray(image.spotArray);
-                    image.position.toArray(image.spotArray, 3);
-                    image.position.toArray(image.spotArray, 6);
-                    image.position.toArray(image.spotArray, 9);
+                if (spriteObject.position.x !== image.position.x || spriteObject.position.y !== image.position.y || spriteObject.position.z !== image.position.z) {
+                    image.position.x = spriteObject.position.x;
+                    image.position.y = spriteObject.position.y;
+                    image.position.z = spriteObject.position.z;
+                    for (var i = 0; i < 4; i++) {
+                        image.spotArray[i * 3] = image.position.x;
+                        image.spotArray[i * 3 + 1] = image.position.y;
+                        image.spotArray[i * 3 + 2] = image.position.z;
+                    }
                     image.positionDirty = true;
                 }
 

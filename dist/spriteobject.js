@@ -5,7 +5,8 @@ define(['threejs', 'objectpool'], function (THREE, ObjectPool) {
 
     function SpriteObject() {
         this.position = new THREE.Vector3();
-        this.size = new Float32Array([0, 0, 1]);
+        this.size = new Float32Array(3).fill(0);
+        this.size[2] = 1;
         this.quaternionArray = new Float32Array(4).fill(0);
     }
 
