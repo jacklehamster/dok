@@ -1228,21 +1228,21 @@ define('spriteobject',['threejs', 'objectpool'], function (THREE, ObjectPool) {
         this.quaternionArray = new Float32Array(4).fill(0);
     }
 
-    SpriteObject.prototype.init = function (x, y, z, width, height, quaternionArray, light, img) {
-        this.position.set(x, y, z);
-        this.size[0] = width;
-        this.size[1] = height;
-        this.hasQuaternionArray = quaternionArray !== null;
-        if (this.hasQuaternionArray) {
-            this.quaternionArray[0] = quaternionArray[0];
-            this.quaternionArray[1] = quaternionArray[1];
-            this.quaternionArray[2] = quaternionArray[2];
-            this.quaternionArray[3] = quaternionArray[3];
+    function initSpriteObject(spriteObject, x, y, z, width, height, quaternionArray, light, img) {
+        spriteObject.position.set(x, y, z);
+        spriteObject.size[0] = width;
+        spriteObject.size[1] = height;
+        spriteObject.hasQuaternionArray = quaternionArray !== null;
+        if (spriteObject.hasQuaternionArray) {
+            spriteObject.quaternionArray[0] = quaternionArray[0];
+            spriteObject.quaternionArray[1] = quaternionArray[1];
+            spriteObject.quaternionArray[2] = quaternionArray[2];
+            spriteObject.quaternionArray[3] = quaternionArray[3];
         }
-        this.light = light;
-        this.img = img;
-        return this;
-    };
+        spriteObject.light = light;
+        spriteObject.img = img;
+    }
+
     SpriteObject.prototype.position = null;
     SpriteObject.prototype.size = null;
     SpriteObject.prototype.hasQuaternionArray = false;
@@ -1254,7 +1254,9 @@ define('spriteobject',['threejs', 'objectpool'], function (THREE, ObjectPool) {
     var objectPool = new ObjectPool(SpriteObject);
 
     SpriteObject.create = function (x, y, z, width, height, quaternionArray, light, img) {
-        return objectPool.create().init(x, y, z, width, height, quaternionArray, light, img);
+        var spriteObject = objectPool.create();
+        initSpriteObject(spriteObject, x, y, z, width, height, quaternionArray, light, img);
+        return spriteObject;
     };
 
     SpriteObject.clear = function () {
