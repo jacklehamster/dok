@@ -2776,12 +2776,12 @@ define('mouse',['utils'], function (Utils) {
             for (var i = 0; i < callbacks.length; i++) {
                 callbacks[i](null, null, true, e.pageX, e.pageY);
             }
-        }
-        if (touches.length === 2) {
-            var dx = touches[0].pageX - touches[1].pageY;
-            var dy = touches[0].pageY - touches[1].pageY;
-            var dist = Math.sqrt(dx * dx + dy * dy);
-            pinchSize = dist;
+            if (touches && touches.length === 2) {
+                var dx = touches[0].pageX - touches[1].pageY;
+                var dy = touches[0].pageY - touches[1].pageY;
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                pinchSize = dist;
+            }
         }
         e.preventDefault();
     }

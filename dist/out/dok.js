@@ -2755,9 +2755,11 @@ define('mouse', ['utils'], function (Utils) {
 
     var spot = { x: 0, y: 0 },
         callbacks = [],
-        wheelCallbacks = [];
+        wheelCallbacks = [],
+        zoomCallbacks = [];
     var touchSpotX = {},
-        touchSpotY = {};
+        touchSpotY = {},
+        pinchSize = 0;
     var mdown = false;
 
     /**
@@ -2781,6 +2783,12 @@ define('mouse', ['utils'], function (Utils) {
                 callbacks[i](null, null, true, e.pageX, e.pageY);
             }
         }
+        if (touches.length === 2) {
+            var dx = touches[0].pageX - touches[1].pageY;
+            var dy = touches[0].pageY - touches[1].pageY;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            pinchSize = dist;
+        }
         e.preventDefault();
     }
 
@@ -2788,7 +2796,9 @@ define('mouse', ['utils'], function (Utils) {
 
         var hasTouch = false;
         if (e.changedTouches) {
-            for (var i = 0; i < e.changedTouches.length; i++) {
+            var touches = e.changedTouches;
+            for (var i = 0; i < touches.length; i++) {
+                var touch = touches[i];
                 delete touchSpotX[touch.identifier];
                 delete touchSpotY[touch.identifier];
             }
@@ -2839,6 +2849,16 @@ define('mouse', ['utils'], function (Utils) {
             for (var i = 0; i < callbacks.length; i++) {
                 callbacks[i](dx, dy, true, e.pageX, e.pageY);
             }
+            if (zoomCallbacks.length && touches.length === 2) {
+                var dx = touches[0].pageX - touches[1].pageY;
+                var dy = touches[0].pageY - touches[1].pageY;
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                var diff = dist - pinchSize;
+                for (var i = 0; i < zoomCallbacks.length; i++) {
+                    zoomCallbacks[i](diff);
+                }
+                pinchSize = dist;
+            }
         }
         e.preventDefault();
     }
@@ -2862,8 +2882,13 @@ define('mouse', ['utils'], function (Utils) {
         wheelCallbacks.push(func);
     }
 
-    function activateTouch() {
+    function setOnZoom(func) {
+        deactivateTouch();
+        activateTouch();
+        zoomCallbacks.push(func);
+    }
 
+    function activateTouch() {
         document.addEventListener("mousedown", onDown);
         document.addEventListener("touchstart", onDown);
         document.addEventListener("mouseup", onUp);
@@ -2888,6 +2913,7 @@ define('mouse', ['utils'], function (Utils) {
     function destroyEverything() {
         callbacks = [];
         wheelCallbacks = [];
+        zoomCallbacks = [];
         deactivateTouch();
     }
 
@@ -2897,6 +2923,7 @@ define('mouse', ['utils'], function (Utils) {
     function Mouse() {}
     Mouse.setOnTouch = setOnTouch;
     Mouse.setOnWheel = setOnWheel;
+    Mouse.setOnZoom = setOnZoom;
 
     Utils.onDestroy(destroyEverything);
 
