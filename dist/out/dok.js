@@ -1234,21 +1234,21 @@ define('spriteobject', ['threejs', 'objectpool'], function (THREE, ObjectPool) {
         this.quaternionArray = new Float32Array(4).fill(0);
     }
 
-    SpriteObject.prototype.init = function (x, y, z, width, height, quaternionArray, light, img) {
-        this.position.set(x, y, z);
-        this.size[0] = width;
-        this.size[1] = height;
-        this.hasQuaternionArray = quaternionArray !== null;
-        if (this.hasQuaternionArray) {
-            this.quaternionArray[0] = quaternionArray[0];
-            this.quaternionArray[1] = quaternionArray[1];
-            this.quaternionArray[2] = quaternionArray[2];
-            this.quaternionArray[3] = quaternionArray[3];
+    function initSpriteObject(spriteObject, x, y, z, width, height, quaternionArray, light, img) {
+        spriteObject.position.set(x, y, z);
+        spriteObject.size[0] = width;
+        spriteObject.size[1] = height;
+        spriteObject.hasQuaternionArray = quaternionArray !== null;
+        if (spriteObject.hasQuaternionArray) {
+            spriteObject.quaternionArray[0] = quaternionArray[0];
+            spriteObject.quaternionArray[1] = quaternionArray[1];
+            spriteObject.quaternionArray[2] = quaternionArray[2];
+            spriteObject.quaternionArray[3] = quaternionArray[3];
         }
-        this.light = light;
-        this.img = img;
-        return this;
-    };
+        spriteObject.light = light;
+        spriteObject.img = img;
+    }
+
     SpriteObject.prototype.position = null;
     SpriteObject.prototype.size = null;
     SpriteObject.prototype.hasQuaternionArray = false;
@@ -1260,7 +1260,9 @@ define('spriteobject', ['threejs', 'objectpool'], function (THREE, ObjectPool) {
     var objectPool = new ObjectPool(SpriteObject);
 
     SpriteObject.create = function (x, y, z, width, height, quaternionArray, light, img) {
-        return objectPool.create().init(x, y, z, width, height, quaternionArray, light, img);
+        var spriteObject = objectPool.create();
+        initSpriteObject(spriteObject, x, y, z, width, height, quaternionArray, light, img);
+        return spriteObject;
     };
 
     SpriteObject.clear = function () {
@@ -2615,14 +2617,14 @@ define('collection', ['utils', 'spritesheet', 'spriteobject', 'camera'], functio
         var light = 1;
         var img = SpriteSheet.spritesheet.sprite[index];
 
-        return SpriteObject.create().init(x * cellSize, y * cellSize, size / 2, size, size, null, light, img);
+        return SpriteObject.create(x * cellSize, y * cellSize, size / 2, size, size, null, light, img);
     }
 
     var cubeFaces = [];
     function spriteCube(spriteInfo) {
         cubeFaces.length = 0;
 
-        cube.faces.push(SpriteObject.create().init(x * cellSize, y * cellSize, size / 2, size, size, Camera.quaternions.southQuaternionArray, light, img));
+        cube.faces.push(SpriteObject.create(x * cellSize, y * cellSize, size / 2, size, size, Camera.quaternions.southQuaternionArray, light, img));
 
         return cubeFaces;
     }
@@ -2630,7 +2632,7 @@ define('collection', ['utils', 'spritesheet', 'spriteobject', 'camera'], functio
     function createSpriteCollection(options) {
         var spriteMap = [];
         var areaSize = 50;
-        var spriteRegistry = {};
+        var spriteRegistry = [];
         var cellSize = 64;
 
         var spriteFunction = function spriteFunction(spriteInfo) {
@@ -2649,7 +2651,7 @@ define('collection', ['utils', 'spritesheet', 'spriteobject', 'camera'], functio
 
         var spriteCount = 0;
         function SpriteInfo(x, y, index) {
-            this.uid = 'uid' + spriteCount++;
+            this.uid = spriteCount++;
             spriteRegistry[this.uid] = this;
             this.index = index;
             this.enterArea(x, y);
@@ -2683,7 +2685,6 @@ define('collection', ['utils', 'spritesheet', 'spriteobject', 'camera'], functio
 
         var selectedObj = { x: 0, y: 0 };
         function getCamPos() {
-            var cellSize = 64;
             var camera = Camera.getCamera();
             var xPos = camera.position.x;
             var yPos = camera.position.y;
@@ -2753,7 +2754,8 @@ define('mouse', ['utils'], function (Utils) {
     'use strict';
 
     var spot = { x: 0, y: 0 },
-        callbacks = [];
+        callbacks = [],
+        wheelCallbacks = [];
     var touchSpotX = {},
         touchSpotY = {};
     var mdown = false;
@@ -2841,10 +2843,23 @@ define('mouse', ['utils'], function (Utils) {
         e.preventDefault();
     }
 
+    function onWheel(e) {
+        e = e || event;
+        for (var i = 0; i < wheelCallbacks.length; i++) {
+            wheelCallbacks[i](e.deltaX, e.deltaY);
+        }
+    }
+
     function setOnTouch(func) {
         deactivateTouch();
         activateTouch();
         callbacks.push(func);
+    }
+
+    function setOnWheel(func) {
+        deactivateTouch();
+        activateTouch();
+        wheelCallbacks.push(func);
     }
 
     function activateTouch() {
@@ -2856,6 +2871,7 @@ define('mouse', ['utils'], function (Utils) {
         document.addEventListener("touchcancel", onUp);
         document.addEventListener("mousemove", onMove);
         document.addEventListener("touchmove", onMove);
+        document.addEventListener("wheel", onWheel);
     }
 
     function deactivateTouch() {
@@ -2866,10 +2882,12 @@ define('mouse', ['utils'], function (Utils) {
         document.removeEventListener("touchcancel", onUp);
         document.removeEventListener("mousemove", onMove);
         document.removeEventListener("touchmove", onMove);
+        document.removeEventListener("wheel", onWheel);
     }
 
     function destroyEverything() {
         callbacks = [];
+        wheelCallbacks = [];
         deactivateTouch();
     }
 
@@ -2878,6 +2896,7 @@ define('mouse', ['utils'], function (Utils) {
      */
     function Mouse() {}
     Mouse.setOnTouch = setOnTouch;
+    Mouse.setOnWheel = setOnWheel;
 
     Utils.onDestroy(destroyEverything);
 

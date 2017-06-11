@@ -66,14 +66,14 @@ define(['utils', 'spritesheet', 'spriteobject', 'camera'], function (Utils, Spri
         var light = 1;
         var img = SpriteSheet.spritesheet.sprite[index];
 
-        return SpriteObject.create().init(x * cellSize, y * cellSize, size / 2, size, size, null, light, img);
+        return SpriteObject.create(x * cellSize, y * cellSize, size / 2, size, size, null, light, img);
     }
 
     var cubeFaces = [];
     function spriteCube(spriteInfo) {
         cubeFaces.length = 0;
 
-        cube.faces.push(SpriteObject.create().init(x * cellSize, y * cellSize, size / 2, size, size, Camera.quaternions.southQuaternionArray, light, img));
+        cube.faces.push(SpriteObject.create(x * cellSize, y * cellSize, size / 2, size, size, Camera.quaternions.southQuaternionArray, light, img));
 
         return cubeFaces;
     }
@@ -81,7 +81,7 @@ define(['utils', 'spritesheet', 'spriteobject', 'camera'], function (Utils, Spri
     function createSpriteCollection(options) {
         var spriteMap = [];
         var areaSize = 50;
-        var spriteRegistry = {};
+        var spriteRegistry = [];
         var cellSize = 64;
 
         var spriteFunction = function spriteFunction(spriteInfo) {
@@ -100,7 +100,7 @@ define(['utils', 'spritesheet', 'spriteobject', 'camera'], function (Utils, Spri
 
         var spriteCount = 0;
         function SpriteInfo(x, y, index) {
-            this.uid = 'uid' + spriteCount++;
+            this.uid = spriteCount++;
             spriteRegistry[this.uid] = this;
             this.index = index;
             this.enterArea(x, y);
@@ -134,7 +134,6 @@ define(['utils', 'spritesheet', 'spriteobject', 'camera'], function (Utils, Spri
 
         var selectedObj = { x: 0, y: 0 };
         function getCamPos() {
-            var cellSize = 64;
             var camera = Camera.getCamera();
             var xPos = camera.position.x;
             var yPos = camera.position.y;

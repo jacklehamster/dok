@@ -71,7 +71,7 @@ define([
         const light = 1;
         const img = SpriteSheet.spritesheet.sprite[index];
 
-        return SpriteObject.create().init(
+        return SpriteObject.create(
             x*cellSize,y*cellSize,size/2,
             size,size,
             null,
@@ -85,7 +85,7 @@ define([
         cubeFaces.length = 0;
 
         cube.faces.push(
-            SpriteObject.create().init(
+            SpriteObject.create(
                 x*cellSize,y*cellSize,size/2,
                 size,size,
                 Camera.quaternions.southQuaternionArray,
@@ -101,7 +101,7 @@ define([
     function createSpriteCollection(options) {
         const spriteMap = [];
         const areaSize = 50;
-        const spriteRegistry = {};
+        const spriteRegistry = [];
         const cellSize = 64;
 
         let spriteFunction = function(spriteInfo) {
@@ -120,7 +120,7 @@ define([
 
         let spriteCount = 0;
         function SpriteInfo(x,y,index) {
-            this.uid = 'uid'+spriteCount++;
+            this.uid = spriteCount++;
             spriteRegistry[this.uid] = this;
             this.index = index;
             this.enterArea(x,y);
@@ -156,7 +156,6 @@ define([
 
         const selectedObj = { x: 0, y: 0};
         function getCamPos() {
-            const cellSize = 64;
             const camera = Camera.getCamera();
             const xPos = camera.position.x;
             const yPos = camera.position.y;
@@ -165,7 +164,6 @@ define([
             selectedObj.y = Math.round(yPos/cellSize) + 6;
             return selectedObj;
         }
-
 
         const spriteCollection = new Collection(
             options,

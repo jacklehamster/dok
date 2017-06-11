@@ -2611,14 +2611,14 @@ define('collection',['utils', 'spritesheet', 'spriteobject', 'camera'], function
         var light = 1;
         var img = SpriteSheet.spritesheet.sprite[index];
 
-        return SpriteObject.create().init(x * cellSize, y * cellSize, size / 2, size, size, null, light, img);
+        return SpriteObject.create(x * cellSize, y * cellSize, size / 2, size, size, null, light, img);
     }
 
     var cubeFaces = [];
     function spriteCube(spriteInfo) {
         cubeFaces.length = 0;
 
-        cube.faces.push(SpriteObject.create().init(x * cellSize, y * cellSize, size / 2, size, size, Camera.quaternions.southQuaternionArray, light, img));
+        cube.faces.push(SpriteObject.create(x * cellSize, y * cellSize, size / 2, size, size, Camera.quaternions.southQuaternionArray, light, img));
 
         return cubeFaces;
     }
@@ -2626,7 +2626,7 @@ define('collection',['utils', 'spritesheet', 'spriteobject', 'camera'], function
     function createSpriteCollection(options) {
         var spriteMap = [];
         var areaSize = 50;
-        var spriteRegistry = {};
+        var spriteRegistry = [];
         var cellSize = 64;
 
         var spriteFunction = function spriteFunction(spriteInfo) {
@@ -2645,7 +2645,7 @@ define('collection',['utils', 'spritesheet', 'spriteobject', 'camera'], function
 
         var spriteCount = 0;
         function SpriteInfo(x, y, index) {
-            this.uid = 'uid' + spriteCount++;
+            this.uid = spriteCount++;
             spriteRegistry[this.uid] = this;
             this.index = index;
             this.enterArea(x, y);
@@ -2679,7 +2679,6 @@ define('collection',['utils', 'spritesheet', 'spriteobject', 'camera'], function
 
         var selectedObj = { x: 0, y: 0 };
         function getCamPos() {
-            var cellSize = 64;
             var camera = Camera.getCamera();
             var xPos = camera.position.x;
             var yPos = camera.position.y;
@@ -2749,9 +2748,12 @@ define('mouse',['utils'], function (Utils) {
     'use strict';
 
     var spot = { x: 0, y: 0 },
-        callbacks = [];
+        callbacks = [],
+        wheelCallbacks = [],
+        zoomCallbacks = [];
     var touchSpotX = {},
-        touchSpotY = {};
+        touchSpotY = {},
+        pinchSize = 0;
     var mdown = false;
 
     /**
@@ -2775,6 +2777,12 @@ define('mouse',['utils'], function (Utils) {
                 callbacks[i](null, null, true, e.pageX, e.pageY);
             }
         }
+        if (touches.length === 2) {
+            var dx = touches[0].pageX - touches[1].pageY;
+            var dy = touches[0].pageY - touches[1].pageY;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            pinchSize = dist;
+        }
         e.preventDefault();
     }
 
@@ -2782,7 +2790,9 @@ define('mouse',['utils'], function (Utils) {
 
         var hasTouch = false;
         if (e.changedTouches) {
-            for (var i = 0; i < e.changedTouches.length; i++) {
+            var touches = e.changedTouches;
+            for (var i = 0; i < touches.length; i++) {
+                var touch = touches[i];
                 delete touchSpotX[touch.identifier];
                 delete touchSpotY[touch.identifier];
             }
@@ -2833,8 +2843,25 @@ define('mouse',['utils'], function (Utils) {
             for (var i = 0; i < callbacks.length; i++) {
                 callbacks[i](dx, dy, true, e.pageX, e.pageY);
             }
+            if (zoomCallbacks.length && touches.length === 2) {
+                var dx = touches[0].pageX - touches[1].pageY;
+                var dy = touches[0].pageY - touches[1].pageY;
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                var diff = dist - pinchSize;
+                for (var i = 0; i < zoomCallbacks.length; i++) {
+                    zoomCallbacks[i](diff);
+                }
+                pinchSize = dist;
+            }
         }
         e.preventDefault();
+    }
+
+    function onWheel(e) {
+        e = e || event;
+        for (var i = 0; i < wheelCallbacks.length; i++) {
+            wheelCallbacks[i](e.deltaX, e.deltaY);
+        }
     }
 
     function setOnTouch(func) {
@@ -2843,8 +2870,19 @@ define('mouse',['utils'], function (Utils) {
         callbacks.push(func);
     }
 
-    function activateTouch() {
+    function setOnWheel(func) {
+        deactivateTouch();
+        activateTouch();
+        wheelCallbacks.push(func);
+    }
 
+    function setOnZoom(func) {
+        deactivateTouch();
+        activateTouch();
+        zoomCallbacks.push(func);
+    }
+
+    function activateTouch() {
         document.addEventListener("mousedown", onDown);
         document.addEventListener("touchstart", onDown);
         document.addEventListener("mouseup", onUp);
@@ -2852,6 +2890,7 @@ define('mouse',['utils'], function (Utils) {
         document.addEventListener("touchcancel", onUp);
         document.addEventListener("mousemove", onMove);
         document.addEventListener("touchmove", onMove);
+        document.addEventListener("wheel", onWheel);
     }
 
     function deactivateTouch() {
@@ -2862,10 +2901,13 @@ define('mouse',['utils'], function (Utils) {
         document.removeEventListener("touchcancel", onUp);
         document.removeEventListener("mousemove", onMove);
         document.removeEventListener("touchmove", onMove);
+        document.removeEventListener("wheel", onWheel);
     }
 
     function destroyEverything() {
         callbacks = [];
+        wheelCallbacks = [];
+        zoomCallbacks = [];
         deactivateTouch();
     }
 
@@ -2874,6 +2916,8 @@ define('mouse',['utils'], function (Utils) {
      */
     function Mouse() {}
     Mouse.setOnTouch = setOnTouch;
+    Mouse.setOnWheel = setOnWheel;
+    Mouse.setOnZoom = setOnZoom;
 
     Utils.onDestroy(destroyEverything);
 
