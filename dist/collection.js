@@ -79,7 +79,7 @@ define(['utils', 'spritesheet', 'spriteobject', 'camera'], function (Utils, Spri
     }
 
     function createSpriteCollection(options) {
-        var spriteMap = [];
+        var spriteHash = [];spriteHash.length = 1000000;
         var areaSize = 50;
         var spriteRegistry = [];
         var cellSize = 64;
@@ -100,36 +100,37 @@ define(['utils', 'spritesheet', 'spriteobject', 'camera'], function (Utils, Spri
 
         var spriteCount = 0;
         function SpriteInfo(x, y, index) {
-            this.uid = spriteCount++;
+            this.uid = ++spriteCount;
             spriteRegistry[this.uid] = this;
             this.index = index;
             this.enterArea(x, y);
         }
         SpriteInfo.prototype.leaveArea = function () {
-            var areaId = getAreaId(this.x, this.y);
-            var area = spriteMap[areaId];
+            var areaId = getAreaHashId(this.x, this.y);
+            var area = spriteHash[areaId];
             if (area) {
-                var posId = Math.floor(this.x) + "_" + Math.floor(this.y);
-                if (area[posId]) delete area[posId][this.uid];
+                if (area[this.uid]) delete area[this.uid];
             }
         };
         SpriteInfo.prototype.enterArea = function (x, y) {
             this.x = x;this.y = y;
-            var areaId = getAreaId(this.x, this.y);
-            var area = spriteMap[areaId] || (spriteMap[areaId] = {});
-            var posId = Math.floor(this.x) + "_" + Math.floor(this.y);
-            area[posId] = area[posId] || (area[posId] = {});
-            area[posId][this.uid] = this;
+            var areaId = getAreaHashId(this.x, this.y);
+            var area = spriteHash[areaId] || (spriteHash[areaId] = {});
+            area[this.uid] = this;
         };
         SpriteInfo.prototype.move = function (x, y) {
             this.leaveArea();
             this.enterArea(x, y);
         };
 
-        function getAreaId(x, y) {
+        function getAreaHashIdWithArea(x, y) {
+            return Math.abs(x * 1331 ^ 312 + y * 131) % spriteHash.length;
+        }
+
+        function getAreaHashId(x, y) {
             x = Math.floor(x / areaSize);
             y = Math.floor(y / areaSize);
-            return x + "_" + y;
+            return getAreaHashIdWithArea(x, y);
         }
 
         var selectedObj = { x: 0, y: 0 };
@@ -147,20 +148,19 @@ define(['utils', 'spritesheet', 'spriteobject', 'camera'], function (Utils, Spri
             var camPos = getCamPos();
             var xArea = Math.floor(camPos.x / areaSize);
             var yArea = Math.floor(camPos.y / areaSize);
-            var range = 1;
-            for (var _y2 = yArea - range; _y2 <= yArea + range; _y2++) {
-                for (var _x2 = xArea - range; _x2 <= xArea + range; _x2++) {
-                    var area = spriteMap[_x2 + "_" + _y2];
+            var areaRange = 1;
+            for (var _y2 = yArea - areaRange; _y2 <= yArea + areaRange; _y2++) {
+                for (var _x2 = xArea - areaRange; _x2 <= xArea + areaRange; _x2++) {
+                    var areaId = getAreaHashIdWithArea(_x2, _y2);
+                    var area = spriteHash[areaId];
                     if (area) {
                         for (var a in area) {
-                            var sprites = area[a];
-                            for (var s in sprites) {
-                                var obj = this.getSprite(sprites[s]);
-                                if (Array.isArray(obj)) {
-                                    obj.forEach(callback);
-                                } else {
-                                    callback(obj);
-                                }
+                            var sprite = area[a];
+                            var obj = this.getSprite(sprite);
+                            if (Array.isArray(obj)) {
+                                obj.forEach(callback);
+                            } else {
+                                callback(obj);
                             }
                         }
                     }
@@ -171,11 +171,18 @@ define(['utils', 'spritesheet', 'spriteobject', 'camera'], function (Utils, Spri
             return new SpriteInfo(x, y, index);
         };
 
+        var array = [];
         spriteCollection.get = function (x, y) {
-            var areaId = getAreaId(x, y);
-            var area = spriteMap[areaId];
-            var posId = Math.floor(x) + "_" + Math.floor(y);
-            return area ? area[posId] : null;
+            var areaId = getAreaHashId(x, y);
+            var area = spriteHash[areaId];
+            array.length = 0;
+            for (var i in area) {
+                var sprite = area[i];
+                if (Math.floor(sprite.x) === x && Math.floor(sprite.y) === y) {
+                    array.push(sprite);
+                }
+            }
+            return array.length ? array : null;
         };
         spriteCollection.find = function (uid) {
             return spriteRegistry[uid];

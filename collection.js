@@ -99,7 +99,7 @@ define([
     }
 
     function createSpriteCollection(options) {
-        const spriteMap = [];
+        const spriteHash = []; spriteHash.length = 1000000;
         const areaSize = 50;
         const spriteRegistry = [];
         const cellSize = 64;
@@ -120,38 +120,38 @@ define([
 
         let spriteCount = 0;
         function SpriteInfo(x,y,index) {
-            this.uid = spriteCount++;
+            this.uid = ++spriteCount;
             spriteRegistry[this.uid] = this;
             this.index = index;
             this.enterArea(x,y);
         }
         SpriteInfo.prototype.leaveArea = function() {
-            const areaId = getAreaId(this.x,this.y);
-            const area = spriteMap[areaId];
+            const areaId = getAreaHashId(this.x,this.y);
+            const area = spriteHash[areaId];
             if(area) {
-                const posId = Math.floor(this.x) + "_" + Math.floor(this.y);
-                if(area[posId])
-                    delete area[posId][this.uid];
+                if(area[this.uid])
+                    delete area[this.uid];
             }
         };
         SpriteInfo.prototype.enterArea = function(x,y) {
             this.x = x; this.y = y;
-            const areaId = getAreaId(this.x,this.y);
-            const area = spriteMap[areaId] || (spriteMap[areaId] = {});
-            const posId = Math.floor(this.x) + "_" + Math.floor(this.y);
-            area[posId] = area[posId] || (area[posId] = {});
-            area[posId][this.uid] = this;
+            const areaId = getAreaHashId(this.x,this.y);
+            const area = spriteHash[areaId] || (spriteHash[areaId] = {});
+            area[this.uid] = this;
         };
         SpriteInfo.prototype.move = function(x,y) {
             this.leaveArea();
             this.enterArea(x,y);
         };
 
+        function getAreaHashIdWithArea(x,y) {
+            return Math.abs(x*1331 ^ 312 + y*131) % spriteHash.length;
+        }
 
-        function getAreaId(x,y) {
+        function getAreaHashId(x,y) {
             x = Math.floor(x/areaSize);
             y = Math.floor(y/areaSize);
-            return x+"_"+y;
+            return getAreaHashIdWithArea(x,y);
         }
 
         const selectedObj = { x: 0, y: 0};
@@ -172,20 +172,19 @@ define([
                 const camPos = getCamPos();
                 const xArea = Math.floor(camPos.x / areaSize);
                 const yArea = Math.floor(camPos.y / areaSize);
-                const range = 1;
-                for(let y=yArea-range;y<=yArea+range;y++) {
-                    for(let x=xArea-range;x<=xArea+range;x++) {
-                        const area = spriteMap[x+"_"+y];
+                const areaRange = 1;
+                for(let y=yArea-areaRange;y<=yArea+areaRange;y++) {
+                    for(let x=xArea-areaRange;x<=xArea+areaRange;x++) {
+                        const areaId = getAreaHashIdWithArea(x,y);
+                        const area = spriteHash[areaId];
                         if(area) {
                             for(let a in area) {
-                                const sprites = area[a];
-                                for(let s in sprites) {
-                                    const obj = this.getSprite(sprites[s]);
-                                    if(Array.isArray(obj)) {
-                                        obj.forEach(callback);
-                                    } else {
-                                        callback(obj);
-                                    }
+                                const sprite = area[a];
+                                const obj = this.getSprite(sprite);
+                                if(Array.isArray(obj)) {
+                                    obj.forEach(callback);
+                                } else {
+                                    callback(obj);
                                 }
                             }
                         }
@@ -196,12 +195,19 @@ define([
         spriteCollection.create = function(x,y,index) {
             return new SpriteInfo(x,y,index);
         };
-
+        
+        var array = [];
         spriteCollection.get = function(x,y) {
-            const areaId = getAreaId(x,y);
-            const area = spriteMap[areaId];
-            const posId = Math.floor(x) + "_" + Math.floor(y);
-            return area?area[posId]:null;
+            const areaId = getAreaHashId(x,y);
+            const area = spriteHash[areaId];
+            array.length = 0;
+            for(var i in area) {
+                var sprite = area[i];
+                if(Math.floor(sprite.x)===x && Math.floor(sprite.y)===y) {
+                    array.push(sprite);
+                }
+            }
+            return array.length ? array : null;
         };
         spriteCollection.find = function(uid) {
             return spriteRegistry[uid];
