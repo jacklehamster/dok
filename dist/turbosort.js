@@ -2,21 +2,14 @@
 
 define(function () {
 
-    var buckets;
-    var counts;
     var SIZE = 1000000;
-    var indexFunction;
+    var buckets = new Uint32Array(SIZE + 1);
+    var counts = new Uint32Array(SIZE + 1);
+    var indexFunction = identity;
 
     /**
      *  FUNCTION DEFINITIONS
      */
-    function initArray(size) {
-        if (!buckets) {
-            buckets = new Uint32Array(size + 1);
-            counts = new Uint32Array(size + 1);
-        }
-    }
-
     function getMinMax(array, offset, length) {
         var firstIndex = indexFunction(array[offset]);
         var minNum = firstIndex;
@@ -62,19 +55,11 @@ define(function () {
         }
     }
 
-    function quickSort(array, size) {
-        quickSortHelper(array, 0, size ? size - 1 : array.length - 1, compareIndex);
-    }
-
     function compareIndex(a, b) {
         return indexFunction(a) - indexFunction(b);
     }
 
     function turboSortHelper(array, offset, length) {
-        if (length < 200) {
-            quickSortHelper(array, offset, offset + length - 1, compareIndex);
-            return;
-        }
         var arrayInfo = getMinMax(array, offset, length);
         if (arrayInfo.inOrder) {
             return;
@@ -88,7 +73,8 @@ define(function () {
 
         var bucketSize = Math.min(length, SIZE);
 
-        var i, index;
+        var i = void 0,
+            index = void 0;
         for (i = 0; i < bucketSize; i++) {
             counts[i] = 0;
         }
@@ -101,7 +87,7 @@ define(function () {
         for (i = 0; i < bucketSize; i++) {
             buckets[i] = 0;
         }
-        buckets[bucketSize] = length;
+        buckets[bucketSize] = offset + length;
         buckets[0] = offset;
         for (i = 1; i < bucketSize; i++) {
             buckets[i] = buckets[i - 1] + counts[i - 1];
@@ -133,38 +119,6 @@ define(function () {
         array[a] = array[b];
         array[b] = temp;
     }
-
-    function quickSortHelper(arr, left, right, compare) {
-        var len = arr.length;
-
-        if (left < right) {
-            var partitionIndex = partition(arr, right, left, right, compare);
-
-            //sort left and right
-            quickSortHelper(arr, left, partitionIndex - 1, compare);
-            quickSortHelper(arr, partitionIndex + 1, right, compare);
-        }
-        return arr;
-    }
-
-    function partition(arr, pivot, left, right, compare) {
-        var pivotValue = arr[pivot];
-        var partitionIndex = left;
-
-        for (var i = left; i < right; i++) {
-            if (compare(arr[i], pivotValue) < 0) {
-                swap(arr, i, partitionIndex);
-                partitionIndex++;
-            }
-        }
-        swap(arr, right, partitionIndex);
-        return partitionIndex;
-    }
-
-    /**
-     *   PROCESSES
-     */
-    initArray(SIZE);
 
     return turboSort;
 });

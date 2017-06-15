@@ -15,7 +15,9 @@ define([
       x,y,z,
       width, height,
       quaternionArray, light, img) {
-        spriteObject.position.set(x,y,z);
+        spriteObject.position.x = x;
+        spriteObject.position.y = y;
+        spriteObject.position.z = z;
         spriteObject.size[0] = width;
         spriteObject.size[1] = height;
         spriteObject.hasQuaternionArray = quaternionArray !== null;
@@ -36,6 +38,7 @@ define([
     SpriteObject.prototype.light = 1;
     SpriteObject.prototype.img = -1;
     SpriteObject.prototype.offset = null;
+    SpriteObject.prototype.visible = true;
 
     const objectPool = new ObjectPool(SpriteObject);
 

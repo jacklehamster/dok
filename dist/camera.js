@@ -3,9 +3,11 @@
 define(['threejs', 'loop'], function (THREE, Loop) {
     'use strict';
 
+    var gameWidth = innerWidth,
+        gameHeight = innerHeight;
     var camera;
-    var camera2d = new THREE.OrthographicCamera(-innerWidth / 2, innerWidth / 2, innerHeight / 2, -innerHeight / 2, 0.1, 1000000);
-    var camera3d = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 1000000);
+    var camera2d = new THREE.OrthographicCamera(-gameWidth / 2, gameWidth / 2, gameHeight / 2, -gameHeight / 2, 0.1, 1000000);
+    var camera3d = new THREE.PerspectiveCamera(75, gameWidth / gameHeight, 0.1, 1000000);
     var cameraQuaternionData = {
         array: new Float32Array(4),
         forwardMovement: new THREE.Vector3(0, 0, 1),
@@ -99,15 +101,17 @@ define(['threejs', 'loop'], function (THREE, Loop) {
     }
 
     function checkWindowSize() {
-        var gameWidth = innerWidth;
-        var gameHeight = innerHeight;
-        camera2d.left = -gameWidth / 2;
-        camera2d.right = gameWidth / 2;
-        camera2d.top = gameHeight / 2;
-        camera2d.bottom = -gameHeight / 2;
-        camera2d.updateProjectionMatrix();
-        camera3d.aspect = gameWidth / gameHeight;
-        camera3d.updateProjectionMatrix();
+        if (gameWidth !== innerWidth || gameHeight !== innerHeight) {
+            camera2d.left = -gameWidth / 2;
+            camera2d.right = gameWidth / 2;
+            camera2d.top = gameHeight / 2;
+            camera2d.bottom = -gameHeight / 2;
+            camera2d.updateProjectionMatrix();
+            camera3d.aspect = gameWidth / gameHeight;
+            camera3d.updateProjectionMatrix();
+            gameWidth = innerWidth;
+            gameHeight = innerHeight;
+        }
     }
 
     /**

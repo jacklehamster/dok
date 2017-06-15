@@ -32,6 +32,9 @@ define([
     Collection.prototype.options = null;
     Collection.prototype.getSprite = nop;
     Collection.prototype.isCollection = true;
+    Collection.prototype.get = nop;
+    Collection.prototype.find = nop;
+    Collection.prototype.create = nop;
 
     /**
      *  FUNCTION DEFINITIONS
@@ -196,13 +199,13 @@ define([
             return new SpriteInfo(x,y,index);
         };
         
-        var array = [];
+        const array = [];
         spriteCollection.get = function(x,y) {
             const areaId = getAreaHashId(x,y);
             const area = spriteHash[areaId];
             array.length = 0;
-            for(var i in area) {
-                var sprite = area[i];
+            for(let i in area) {
+                const sprite = area[i];
                 if(Math.floor(sprite.x)===x && Math.floor(sprite.y)===y) {
                     array.push(sprite);
                 }

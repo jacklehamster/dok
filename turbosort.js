@@ -1,20 +1,13 @@
 define(function() {
 
-    var buckets;
-    var counts;
-    var SIZE = 1000000;
-    var indexFunction;
+    const SIZE = 1000000;
+    const buckets = new Uint32Array(SIZE+1);
+    const counts = new Uint32Array(SIZE+1);
+    let indexFunction = identity;
 
     /**
      *  FUNCTION DEFINITIONS
      */
-    function initArray(size) {
-        if(!buckets) {
-            buckets = new Uint32Array(size+1);
-            counts = new Uint32Array(size+1);
-        }
-    }
-
     function getMinMax(array, offset, length) {
         let firstIndex = indexFunction(array[offset]);
         let minNum = firstIndex;
@@ -60,33 +53,25 @@ define(function() {
         }
     }
 
-    function quickSort(array, size) {
-        quickSortHelper(array, 0, size ? size-1 : array.length-1, compareIndex);
-    }
-
     function compareIndex(a,b) {
         return indexFunction(a)-indexFunction(b);
     }
 
     function turboSortHelper(array, offset, length) {
-        if(length < 200) {
-            quickSortHelper(array, offset, offset+length-1, compareIndex);
-            return;
-        }
-        var arrayInfo = getMinMax(array, offset, length);
+        const arrayInfo = getMinMax(array, offset, length);
         if(arrayInfo.inOrder) {
             return;
         }
-        var min = arrayInfo.min;
-        var max = arrayInfo.max;
-        var range = max-min;
+        const min = arrayInfo.min;
+        const max = arrayInfo.max;
+        const range = max-min;
         if(range===0) {
             return;
         }
         
-        var bucketSize = Math.min(length, SIZE);
+        const bucketSize = Math.min(length, SIZE);
 
-        var i, index;
+        let i, index;
         for(i=0; i<bucketSize; i++) {
             counts[i] = 0;
         }
@@ -99,16 +84,16 @@ define(function() {
         for(i=0; i<bucketSize; i++) {
             buckets[i] = 0;
         }
-        buckets[bucketSize] = length;
+        buckets[bucketSize] = offset + length;
         buckets[0] = offset;
         for(i=1; i<bucketSize; i++) {
             buckets[i] = buckets[i-1] + counts[i-1];
         }
 
-        var voyager = offset, bucketId = 0;
+        let voyager = offset, bucketId = 0;
         while(bucketId<bucketSize) {
             index = Math.floor((bucketSize-1) * (indexFunction(array[voyager]) - min)/range);
-            var newSpot = buckets[index] + --counts[index];
+            const newSpot = buckets[index] + --counts[index];
             swap(array,voyager,newSpot);
             while(!counts[bucketId]) {
                 bucketId++;
@@ -130,38 +115,6 @@ define(function() {
         array[a] = array[b];
         array[b] = temp;
     }
-
-    function quickSortHelper(arr, left, right, compare){
-        const len = arr.length;
-
-        if(left < right){
-            const partitionIndex = partition(arr, right, left, right, compare);
-
-            //sort left and right
-            quickSortHelper(arr, left, partitionIndex - 1, compare);
-            quickSortHelper(arr, partitionIndex + 1, right, compare);
-        }
-        return arr;
-    }
-
-    function partition(arr, pivot, left, right, compare){
-        const pivotValue = arr[pivot];
-        let partitionIndex = left;
-
-        for(let i = left; i < right; i++){
-            if(compare(arr[i] , pivotValue)<0){
-                swap(arr, i, partitionIndex);
-                partitionIndex++;
-            }
-        }
-        swap(arr, right, partitionIndex);
-        return partitionIndex;
-    }
-
-    /**
-     *   PROCESSES
-     */
-    initArray(SIZE);
 
     return turboSort;
 });

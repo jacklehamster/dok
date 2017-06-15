@@ -1070,9 +1070,11 @@ define('gifHandler',['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Utils
 define('camera',['threejs', 'loop'], function (THREE, Loop) {
     'use strict';
 
+    var gameWidth = innerWidth,
+        gameHeight = innerHeight;
     var camera;
-    var camera2d = new THREE.OrthographicCamera(-innerWidth / 2, innerWidth / 2, innerHeight / 2, -innerHeight / 2, 0.1, 1000000);
-    var camera3d = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 1000000);
+    var camera2d = new THREE.OrthographicCamera(-gameWidth / 2, gameWidth / 2, gameHeight / 2, -gameHeight / 2, 0.1, 1000000);
+    var camera3d = new THREE.PerspectiveCamera(75, gameWidth / gameHeight, 0.1, 1000000);
     var cameraQuaternionData = {
         array: new Float32Array(4),
         forwardMovement: new THREE.Vector3(0, 0, 1),
@@ -1166,15 +1168,17 @@ define('camera',['threejs', 'loop'], function (THREE, Loop) {
     }
 
     function checkWindowSize() {
-        var gameWidth = innerWidth;
-        var gameHeight = innerHeight;
-        camera2d.left = -gameWidth / 2;
-        camera2d.right = gameWidth / 2;
-        camera2d.top = gameHeight / 2;
-        camera2d.bottom = -gameHeight / 2;
-        camera2d.updateProjectionMatrix();
-        camera3d.aspect = gameWidth / gameHeight;
-        camera3d.updateProjectionMatrix();
+        if (gameWidth !== innerWidth || gameHeight !== innerHeight) {
+            camera2d.left = -gameWidth / 2;
+            camera2d.right = gameWidth / 2;
+            camera2d.top = gameHeight / 2;
+            camera2d.bottom = -gameHeight / 2;
+            camera2d.updateProjectionMatrix();
+            camera3d.aspect = gameWidth / gameHeight;
+            camera3d.updateProjectionMatrix();
+            gameWidth = innerWidth;
+            gameHeight = innerHeight;
+        }
     }
 
     /**
@@ -1252,7 +1256,9 @@ define('spriteobject',['threejs', 'objectpool'], function (THREE, ObjectPool) {
     }
 
     function initSpriteObject(spriteObject, x, y, z, width, height, quaternionArray, light, img) {
-        spriteObject.position.set(x, y, z);
+        spriteObject.position.x = x;
+        spriteObject.position.y = y;
+        spriteObject.position.z = z;
         spriteObject.size[0] = width;
         spriteObject.size[1] = height;
         spriteObject.hasQuaternionArray = quaternionArray !== null;
@@ -1273,6 +1279,7 @@ define('spriteobject',['threejs', 'objectpool'], function (THREE, ObjectPool) {
     SpriteObject.prototype.light = 1;
     SpriteObject.prototype.img = -1;
     SpriteObject.prototype.offset = null;
+    SpriteObject.prototype.visible = true;
 
     var objectPool = new ObjectPool(SpriteObject);
 
@@ -2011,21 +2018,14 @@ define('spritesheet',['threejs', 'utils', 'gifhandler', 'loader', 'packer'], fun
 
 define('turbosort',[],function () {
 
-    var buckets;
-    var counts;
     var SIZE = 1000000;
-    var indexFunction;
+    var buckets = new Uint32Array(SIZE + 1);
+    var counts = new Uint32Array(SIZE + 1);
+    var indexFunction = identity;
 
     /**
      *  FUNCTION DEFINITIONS
      */
-    function initArray(size) {
-        if (!buckets) {
-            buckets = new Uint32Array(size + 1);
-            counts = new Uint32Array(size + 1);
-        }
-    }
-
     function getMinMax(array, offset, length) {
         var firstIndex = indexFunction(array[offset]);
         var minNum = firstIndex;
@@ -2071,19 +2071,11 @@ define('turbosort',[],function () {
         }
     }
 
-    function quickSort(array, size) {
-        quickSortHelper(array, 0, size ? size - 1 : array.length - 1, compareIndex);
-    }
-
     function compareIndex(a, b) {
         return indexFunction(a) - indexFunction(b);
     }
 
     function turboSortHelper(array, offset, length) {
-        if (length < 200) {
-            quickSortHelper(array, offset, offset + length - 1, compareIndex);
-            return;
-        }
         var arrayInfo = getMinMax(array, offset, length);
         if (arrayInfo.inOrder) {
             return;
@@ -2097,7 +2089,8 @@ define('turbosort',[],function () {
 
         var bucketSize = Math.min(length, SIZE);
 
-        var i, index;
+        var i = void 0,
+            index = void 0;
         for (i = 0; i < bucketSize; i++) {
             counts[i] = 0;
         }
@@ -2110,7 +2103,7 @@ define('turbosort',[],function () {
         for (i = 0; i < bucketSize; i++) {
             buckets[i] = 0;
         }
-        buckets[bucketSize] = length;
+        buckets[bucketSize] = offset + length;
         buckets[0] = offset;
         for (i = 1; i < bucketSize; i++) {
             buckets[i] = buckets[i - 1] + counts[i - 1];
@@ -2142,38 +2135,6 @@ define('turbosort',[],function () {
         array[a] = array[b];
         array[b] = temp;
     }
-
-    function quickSortHelper(arr, left, right, compare) {
-        var len = arr.length;
-
-        if (left < right) {
-            var partitionIndex = partition(arr, right, left, right, compare);
-
-            //sort left and right
-            quickSortHelper(arr, left, partitionIndex - 1, compare);
-            quickSortHelper(arr, partitionIndex + 1, right, compare);
-        }
-        return arr;
-    }
-
-    function partition(arr, pivot, left, right, compare) {
-        var pivotValue = arr[pivot];
-        var partitionIndex = left;
-
-        for (var i = left; i < right; i++) {
-            if (compare(arr[i], pivotValue) < 0) {
-                swap(arr, i, partitionIndex);
-                partitionIndex++;
-            }
-        }
-        swap(arr, right, partitionIndex);
-        return partitionIndex;
-    }
-
-    /**
-     *   PROCESSES
-     */
-    initArray(SIZE);
 
     return turboSort;
 });
@@ -2232,18 +2193,17 @@ define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'cam
 
         this.display = function (spriteObject) {
             var image = null;
-            var cut = spriteObject && spriteObject.visible !== false ? SpriteSheet.getCut(spriteObject.img) : null;
+            var cut = spriteObject && spriteObject.visible ? SpriteSheet.getCut(spriteObject.img) : null;
             if (cut && cut.ready) {
                 var index = self.imageCount;
-                if (!self.images[index]) {
-                    self.images[index] = new SpriteImage();
-                    self.images[index].index = index;
-                }
-
                 image = self.images[index];
+                if (!image) {
+                    image = self.images[index] = new SpriteImage();
+                    image.index = index;
 
-                for (var j = 0; j < indices.length; j++) {
-                    image.indexArray[j] = indices[j] + image.index * 4;
+                    for (var j = 0; j < indices.length; j++) {
+                        image.indexArray[j] = indices[j] + image.index * 4;
+                    }
                 }
 
                 var quat = spriteObject.hasQuaternionArray ? spriteObject.quaternionArray : Camera.getCameraQuaternionData().array;
@@ -2329,7 +2289,6 @@ define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'cam
     SpriteImage.prototype.uvDirty = true;
     SpriteImage.prototype.lightDirty = true;
     SpriteImage.prototype.quatDirty = true;
-    SpriteImage.prototype.spriteObject = null;
 
     /**
      *  FUNCTION DEFINITIONS
@@ -2602,6 +2561,9 @@ define('collection',['utils', 'spritesheet', 'spriteobject', 'camera'], function
     Collection.prototype.options = null;
     Collection.prototype.getSprite = nop;
     Collection.prototype.isCollection = true;
+    Collection.prototype.get = nop;
+    Collection.prototype.find = nop;
+    Collection.prototype.create = nop;
 
     /**
      *  FUNCTION DEFINITIONS

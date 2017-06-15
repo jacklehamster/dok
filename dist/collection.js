@@ -28,6 +28,9 @@ define(['utils', 'spritesheet', 'spriteobject', 'camera'], function (Utils, Spri
     Collection.prototype.options = null;
     Collection.prototype.getSprite = nop;
     Collection.prototype.isCollection = true;
+    Collection.prototype.get = nop;
+    Collection.prototype.find = nop;
+    Collection.prototype.create = nop;
 
     /**
      *  FUNCTION DEFINITIONS

@@ -31,22 +31,22 @@ define([
 
         this.display = function (spriteObject) {
             let image = null;
-            const cut = spriteObject && spriteObject.visible !== false
+            const cut = spriteObject && spriteObject.visible
                 ? SpriteSheet.getCut(spriteObject.img) : null;
             if (cut && cut.ready) {
                 const index = self.imageCount;
-                if(!self.images[index]) {
-                    self.images[index] = new SpriteImage();
-                    self.images[index].index = index;
-                }
-
                 image = self.images[index];
+                if(!image) {
+                    image = self.images[index] = new SpriteImage();
+                    image.index = index;
 
-                for (let j=0; j<indices.length; j++) {
-                    image.indexArray[j] = indices[j] + image.index*4;
+                    for (let j=0; j<indices.length; j++) {
+                        image.indexArray[j] = indices[j] + image.index*4;
+                    }
                 }
 
-                const quat = spriteObject.hasQuaternionArray ? spriteObject.quaternionArray : Camera.getCameraQuaternionData().array;
+                const quat = spriteObject.hasQuaternionArray
+                    ? spriteObject.quaternionArray : Camera.getCameraQuaternionData().array;
                 if (image.quaternionArray[0] !== quat[0]
                     || image.quaternionArray[1] !== quat[1]
                     || image.quaternionArray[2] !== quat[2]
@@ -143,7 +143,6 @@ define([
     SpriteImage.prototype.uvDirty = true;
     SpriteImage.prototype.lightDirty = true;
     SpriteImage.prototype.quatDirty = true;
-    SpriteImage.prototype.spriteObject = null;
 
     /**
      *  FUNCTION DEFINITIONS

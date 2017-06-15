@@ -25,18 +25,17 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
 
         this.display = function (spriteObject) {
             var image = null;
-            var cut = spriteObject && spriteObject.visible !== false ? SpriteSheet.getCut(spriteObject.img) : null;
+            var cut = spriteObject && spriteObject.visible ? SpriteSheet.getCut(spriteObject.img) : null;
             if (cut && cut.ready) {
                 var index = self.imageCount;
-                if (!self.images[index]) {
-                    self.images[index] = new SpriteImage();
-                    self.images[index].index = index;
-                }
-
                 image = self.images[index];
+                if (!image) {
+                    image = self.images[index] = new SpriteImage();
+                    image.index = index;
 
-                for (var j = 0; j < indices.length; j++) {
-                    image.indexArray[j] = indices[j] + image.index * 4;
+                    for (var j = 0; j < indices.length; j++) {
+                        image.indexArray[j] = indices[j] + image.index * 4;
+                    }
                 }
 
                 var quat = spriteObject.hasQuaternionArray ? spriteObject.quaternionArray : Camera.getCameraQuaternionData().array;
@@ -122,7 +121,6 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
     SpriteImage.prototype.uvDirty = true;
     SpriteImage.prototype.lightDirty = true;
     SpriteImage.prototype.quatDirty = true;
-    SpriteImage.prototype.spriteObject = null;
 
     /**
      *  FUNCTION DEFINITIONS
