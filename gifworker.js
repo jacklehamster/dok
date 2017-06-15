@@ -1,12 +1,13 @@
-define(['utils', 'loop'], function(Utils, Loop) {
-    var gifWorkerCallbacks = {};
+define(['utils', 'loop', 'IDGenerator'], function(Utils, Loop, IDGenerator) {
+    let gifWorkerCallbacks = [];
+    let generator = new IDGenerator();
 
     function GifWorker() {
         onmessage = function(e) {
-            var frameInfo = e.data.frameInfo;
-            var cData = e.data.cData;
-            var header = e.data.header;
-            var id = e.data.id;
+            const frameInfo = e.data.frameInfo;
+            const cData = e.data.cData;
+            const header = e.data.header;
+            const id = e.data.id;
 
             if(frameInfo && cData && header) {
                 plasterPixels(frameInfo, cData, header);
@@ -15,12 +16,12 @@ define(['utils', 'loop'], function(Utils, Loop) {
         };
 
         function plasterPixels(frameInfo, cData, header) {
-            var img = frameInfo.img;
-            var gce = frameInfo.gce;
-            var transparency = gce.transparencyGiven ? gce.transparencyIndex : null;
-            var disposalMethod = gce.disposalMethod;
+            const img = frameInfo.img;
+            const gce = frameInfo.gce;
+            const transparency = gce.transparencyGiven ? gce.transparencyIndex : null;
+            const disposalMethod = gce.disposalMethod;
 
-            var ct = img.lctFlag ? img.lct : header.gct;
+            const ct = img.lctFlag ? img.lct : header.gct;
 
             img.pixels.forEach(function(pixel, i) {
                 if (transparency !== pixel) { // This includes null, if no transparency was defined.
@@ -35,31 +36,29 @@ define(['utils', 'loop'], function(Utils, Loop) {
         }
     }
 
-    var code = GifWorker.toString();
+    let code = GifWorker.toString();
     code = code.substring(code.indexOf("{")+1, code.lastIndexOf("}"));
 
-    var blob = new Blob([code], {type: "application/javascript"});
-    var gifWorker = new Worker(URL.createObjectURL(blob));
+    const blob = new Blob([code], {type: "application/javascript"});
+    let gifWorker = new Worker(URL.createObjectURL(blob));
 
     function initializeGifWorker(gifWorker) {
         gifWorker.onmessage = function(e) {
             gifWorkerCallbacks[e.data.id] (e.data.cData, e.data.frameInfo);
+            generator.recycle(e.data.id);
             delete gifWorkerCallbacks[e.data.id];
         }
     }
 
     function sendToGifWorker(frameInfo, cData, header, callback) {
-        require(['https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.7.0/js/md5.min.js'],
-            function(md5) {
-                const id = md5(Math.random()+""+Loop.time);
-                gifWorkerCallbacks[id] = callback;
-                gifWorker.postMessage({
-                    frameInfo,
-                    cData,
-                    header,
-                    id
-                }, [cData.data.buffer]);
-            });
+        const id = generator.get();
+        gifWorkerCallbacks[id] = callback;
+        gifWorker.postMessage({
+            frameInfo,
+            cData,
+            header,
+            id
+        }, [cData.data.buffer]);
     }
 
 
@@ -73,6 +72,7 @@ define(['utils', 'loop'], function(Utils, Loop) {
         }
         gifWorker = null;
         gifWorkerCallbacks = null;
+        generator = null;
     }
 
     Utils.onDestroy(destroyEverything);

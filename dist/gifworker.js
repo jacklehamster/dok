@@ -1,7 +1,8 @@
 'use strict';
 
-define(['utils', 'loop'], function (Utils, Loop) {
-    var gifWorkerCallbacks = {};
+define(['utils', 'loop', 'IDGenerator'], function (Utils, Loop, IDGenerator) {
+    var gifWorkerCallbacks = [];
+    var generator = new IDGenerator();
 
     function GifWorker() {
         onmessage = function onmessage(e) {
@@ -47,21 +48,20 @@ define(['utils', 'loop'], function (Utils, Loop) {
     function initializeGifWorker(gifWorker) {
         gifWorker.onmessage = function (e) {
             gifWorkerCallbacks[e.data.id](e.data.cData, e.data.frameInfo);
+            generator.recycle(e.data.id);
             delete gifWorkerCallbacks[e.data.id];
         };
     }
 
     function sendToGifWorker(frameInfo, cData, header, callback) {
-        require(['https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.7.0/js/md5.min.js'], function (md5) {
-            var id = md5(Math.random() + "" + Loop.time);
-            gifWorkerCallbacks[id] = callback;
-            gifWorker.postMessage({
-                frameInfo: frameInfo,
-                cData: cData,
-                header: header,
-                id: id
-            }, [cData.data.buffer]);
-        });
+        var id = generator.get();
+        gifWorkerCallbacks[id] = callback;
+        gifWorker.postMessage({
+            frameInfo: frameInfo,
+            cData: cData,
+            header: header,
+            id: id
+        }, [cData.data.buffer]);
     }
 
     initializeGifWorker(gifWorker);
@@ -74,6 +74,7 @@ define(['utils', 'loop'], function (Utils, Loop) {
         }
         gifWorker = null;
         gifWorkerCallbacks = null;
+        generator = null;
     }
 
     Utils.onDestroy(destroyEverything);

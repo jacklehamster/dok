@@ -1996,7 +1996,7 @@ define('turbosort', [], function () {
 
     var buckets;
     var counts;
-    var SIZE = 1000;
+    var SIZE = 1000000;
     var indexFunction;
 
     /**
@@ -2078,25 +2078,31 @@ define('turbosort', [], function () {
             return;
         }
 
+        var bucketSize = Math.min(length, SIZE);
+
         var i, index;
-        counts.fill(0);
-        counts[SIZE] = 1;
+        for (i = 0; i < bucketSize; i++) {
+            counts[i] = 0;
+        }
+        counts[bucketSize] = 1;
         for (i = 0; i < length; i++) {
-            index = Math.floor((SIZE - 1) * (indexFunction(array[i + offset]) - min) / range);
+            index = Math.floor((bucketSize - 1) * (indexFunction(array[i + offset]) - min) / range);
             counts[index]++;
         }
 
-        buckets.fill(0);
-        buckets[SIZE] = length;
+        for (i = 0; i < bucketSize; i++) {
+            buckets[i] = 0;
+        }
+        buckets[bucketSize] = length;
         buckets[0] = offset;
-        for (i = 1; i < SIZE; i++) {
+        for (i = 1; i < bucketSize; i++) {
             buckets[i] = buckets[i - 1] + counts[i - 1];
         }
 
         var voyager = offset,
             bucketId = 0;
-        while (bucketId < SIZE) {
-            index = Math.floor((SIZE - 1) * (indexFunction(array[voyager]) - min) / range);
+        while (bucketId < bucketSize) {
+            index = Math.floor((bucketSize - 1) * (indexFunction(array[voyager]) - min) / range);
             var newSpot = buckets[index] + --counts[index];
             swap(array, voyager, newSpot);
             while (!counts[bucketId]) {
@@ -2104,10 +2110,10 @@ define('turbosort', [], function () {
             }
             voyager = buckets[bucketId];
         }
-        for (i = 0; i < SIZE; i++) {
+        for (i = 0; i < bucketSize; i++) {
             counts[i] = buckets[i + 1] - buckets[i];
         }
-        for (i = 0; i < SIZE; i++) {
+        for (i = 0; i < bucketSize; i++) {
             if (counts[i] > 1) {
                 turboSortHelper(array, buckets[i], counts[i]);
             }
@@ -2634,7 +2640,6 @@ define('collection', ['utils', 'spritesheet', 'spriteobject', 'camera'], functio
         var areaSize = 50;
         var spriteRegistry = [];
         var cellSize = 64;
-        window.www = spriteHash;
 
         var spriteFunction = function spriteFunction(spriteInfo) {
             switch (spriteInfo.type) {
