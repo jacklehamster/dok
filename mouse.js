@@ -133,26 +133,34 @@ define([ 'utils' ], function(Utils) {
         zoomCallbacks.push(func);
     }
 
+    let element = document;
+
     function activateTouch() {
-        document.addEventListener("mousedown", onDown);
-        document.addEventListener("touchstart", onDown);
-        document.addEventListener("mouseup", onUp);
-        document.addEventListener("touchend", onUp);
-        document.addEventListener("touchcancel", onUp);
-        document.addEventListener("mousemove", onMove);
-        document.addEventListener("touchmove", onMove);
-        document.addEventListener("wheel", onWheel);
+        element.addEventListener("mousedown", onDown);
+        element.addEventListener("touchstart", onDown);
+        element.addEventListener("mouseup", onUp);
+        element.addEventListener("touchend", onUp);
+        element.addEventListener("touchcancel", onUp);
+        element.addEventListener("mousemove", onMove);
+        element.addEventListener("touchmove", onMove);
+        element.addEventListener("wheel", onWheel);
     }
 
     function deactivateTouch() {
-        document.removeEventListener("mousedown", onDown);
-        document.removeEventListener("touchstart", onDown);
-        document.removeEventListener("mouseup", onUp);
-        document.removeEventListener("touchend", onUp);
-        document.removeEventListener("touchcancel", onUp);
-        document.removeEventListener("mousemove", onMove);
-        document.removeEventListener("touchmove", onMove);
-        document.removeEventListener("wheel", onWheel);
+        element.removeEventListener("mousedown", onDown);
+        element.removeEventListener("touchstart", onDown);
+        element.removeEventListener("mouseup", onUp);
+        element.removeEventListener("touchend", onUp);
+        element.removeEventListener("touchcancel", onUp);
+        element.removeEventListener("mousemove", onMove);
+        element.removeEventListener("touchmove", onMove);
+        element.removeEventListener("wheel", onWheel);
+    }
+
+    function setMainElement(elem) {
+        deactivateTouch();
+        element = elem;
+        activateTouch();
     }
 
     function destroyEverything() {
@@ -170,6 +178,7 @@ define([ 'utils' ], function(Utils) {
     Mouse.setOnTouch = setOnTouch;
     Mouse.setOnWheel = setOnWheel;
     Mouse.setOnZoom = setOnZoom;
+    Mouse.setMainElement = setMainElement;
 
     Utils.onDestroy(destroyEverything);
 
