@@ -258,7 +258,6 @@ define(['threejs', 'utils', 'gifhandler', 'loader', 'packer'], function (THREE, 
                 cut.cut[frame].uv[u] = cutcut[uvOrder[u] * 2 + u % 2];
             }
             cut.cut[frame].ready = true;
-            //            console.log(canvas);
             return cut;
         } else {
             return cut;
@@ -286,7 +285,6 @@ define(['threejs', 'utils', 'gifhandler', 'loader', 'packer'], function (THREE, 
                     }
                 }
             }
-            console.log(root);
             return root;
         }
     }
