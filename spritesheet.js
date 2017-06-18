@@ -203,9 +203,9 @@ function( THREE,     Utils,   GifHandler,    Loader,   Packer) {
         }
     }
 
-    function getCut(index) {
+    function getCut(index, time) {
         var cut = cutArray[index];
-        var frame = cut && cut.gif ? cut.gif.getFrame() : 0;
+        var frame = cut && cut.gif ? cut.gif.getFrame(time) : 0;
         if(cut && cut.cut[frame] && cut.cut[frame].ready) {
             return cut.cut[frame];
         }

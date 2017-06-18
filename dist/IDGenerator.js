@@ -16,7 +16,6 @@ define(function () {
     }
     IDGenerator.prototype.recycle = null;
     IDGenerator.prototype.get = null;
-
     return IDGenerator;
 });
 //# sourceMappingURL=IDGenerator.js.map

@@ -4,12 +4,14 @@ define(function() {
 varying vec2 vUv;
 attribute float tex;
 attribute float light;
+attribute float wave;
 attribute vec3 spot;
 attribute vec4 quaternion;
 varying float vTex;
 varying float vLight;
 uniform vec3 vCam;
 uniform float curvature;
+uniform float time;
 
 void main()  {
     vTex = tex;
@@ -19,7 +21,12 @@ void main()  {
     vLight = 1.0/ sqrt(500.0 / distance(newPosition, vCam)) * light;
 
     float dist = distance(newPosition, vCam);
-    newPosition.z = newPosition.z - curvature * (dist*dist)/20000.0;
+    if (curvature > 0.0) {
+        newPosition.z = newPosition.z - curvature * (dist*dist)/20000.0;
+    }
+    if (wave > 0.0) {
+        newPosition.z = newPosition.z + wave * sin(newPosition.x*5.0 - newPosition.y*7.0 + time);
+    }
 
     vec4 mvPosition = modelViewMatrix * vec4(newPosition, 1.0 );
     gl_Position = projectionMatrix * mvPosition;

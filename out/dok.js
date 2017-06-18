@@ -457,7 +457,6 @@ define('IDGenerator',[],function () {
     }
     IDGenerator.prototype.recycle = null;
     IDGenerator.prototype.get = null;
-
     return IDGenerator;
 });
 //# sourceMappingURL=IDGenerator.js.map;
@@ -937,15 +936,14 @@ define('gifHandler',['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Utils
         var self = this;
 
         var gifInfo = {
-            currentFrame: 0,
             maxFrameCompleted: 0,
-            renderTime: 0,
             framesProcessed: 0,
             header: null,
             frameInfos: [],
             block: null,
             canvases: [],
             callbacks: [],
+            frameSlot: null,
             processNextFrame: function processNextFrame() {
                 var frame = this.framesProcessed;
                 var frameInfo = this.frameInfos[frame];
@@ -981,7 +979,6 @@ define('gifHandler',['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Utils
                         self.frameInfos[frameInfo.frame].ready = true;
                         processNext();
                     });
-                    this.currentFrame = this.framesProcessed;
                     this.framesProcessed++;
                     //                    document.body.appendChild(canvas);
                 }
@@ -992,7 +989,7 @@ define('gifHandler',['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Utils
                 self.height = this.header.height;
             },
             gce: function gce(_gce) {
-                if (this.frameInfos.length == 0 || this.frameInfos[this.frameInfos.length - 1].gce) {
+                if (this.frameInfos.length === 0 || this.frameInfos[this.frameInfos.length - 1].gce) {
                     this.frameInfos.push({
                         gce: null,
                         cycleTime: null,
@@ -1039,14 +1036,24 @@ define('gifHandler',['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Utils
     GifImage.prototype.gifInfo = null;
     GifImage.prototype.getFrame = GifImage_getFrame;
 
-    function GifImage_getFrame() {
+    function GifImage_getFrame(time) {
         var gifInfo = this.gifInfo;
-        if (gifInfo.block && Loop.time > gifInfo.renderTime) {
-            gifInfo.currentFrame = (gifInfo.currentFrame + 1) % this.frameInfos.length;
+
+        if (gifInfo.block) {
             var totalAnimationTime = this.frameInfos[this.frameInfos.length - 1].cycleTime;
-            gifInfo.renderTime = Math.floor(Loop.time / totalAnimationTime) * totalAnimationTime + this.frameInfos[gifInfo.currentFrame].cycleTime;
+            if (!gifInfo.frameSlot) {
+                gifInfo.frameSlot = [];
+                var cycle = 0;
+                for (var frame = 0; frame < this.frameInfos.length; frame++) {
+                    while (gifInfo.frameSlot.length < this.frameInfos[frame].cycleTime) {
+                        gifInfo.frameSlot.push(frame);
+                    }
+                }
+            }
+            var timeInCycle = Math.floor(time % totalAnimationTime);
+            return gifInfo.frameSlot[timeInCycle];
         }
-        return Math.min(gifInfo.currentFrame, gifInfo.maxFrameCompleted);
+        return gifInfo.maxFrameCompleted;
     }
 
     function destroyEverything() {
@@ -1255,7 +1262,7 @@ define('spriteobject',['threejs', 'objectpool'], function (THREE, ObjectPool) {
         this.quaternionArray = new Float32Array(4).fill(0);
     }
 
-    function initSpriteObject(spriteObject, x, y, z, width, height, quaternionArray, light, img) {
+    function initSpriteObject(spriteObject, x, y, z, width, height, quaternionArray, img, light, wave) {
         spriteObject.position.x = x;
         spriteObject.position.y = y;
         spriteObject.position.z = z;
@@ -1268,8 +1275,9 @@ define('spriteobject',['threejs', 'objectpool'], function (THREE, ObjectPool) {
             spriteObject.quaternionArray[2] = quaternionArray[2];
             spriteObject.quaternionArray[3] = quaternionArray[3];
         }
-        spriteObject.light = light;
         spriteObject.img = img;
+        spriteObject.light = light;
+        spriteObject.wave = wave;
     }
 
     SpriteObject.prototype.position = null;
@@ -1277,15 +1285,16 @@ define('spriteobject',['threejs', 'objectpool'], function (THREE, ObjectPool) {
     SpriteObject.prototype.hasQuaternionArray = false;
     SpriteObject.prototype.quaternionArray = null;
     SpriteObject.prototype.light = 1;
+    SpriteObject.prototype.wave = 0;
     SpriteObject.prototype.img = -1;
     SpriteObject.prototype.offset = null;
     SpriteObject.prototype.visible = true;
 
     var objectPool = new ObjectPool(SpriteObject);
 
-    SpriteObject.create = function (x, y, z, width, height, quaternionArray, light, img) {
+    SpriteObject.create = function (x, y, z, width, height, quaternionArray, img, light, wave) {
         var spriteObject = objectPool.create();
-        initSpriteObject(spriteObject, x, y, z, width, height, quaternionArray, light, img);
+        initSpriteObject(spriteObject, x, y, z, width, height, quaternionArray, img, light, wave);
         return spriteObject;
     };
 
@@ -1422,15 +1431,14 @@ define('gifhandler',['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Utils
         var self = this;
 
         var gifInfo = {
-            currentFrame: 0,
             maxFrameCompleted: 0,
-            renderTime: 0,
             framesProcessed: 0,
             header: null,
             frameInfos: [],
             block: null,
             canvases: [],
             callbacks: [],
+            frameSlot: null,
             processNextFrame: function processNextFrame() {
                 var frame = this.framesProcessed;
                 var frameInfo = this.frameInfos[frame];
@@ -1466,7 +1474,6 @@ define('gifhandler',['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Utils
                         self.frameInfos[frameInfo.frame].ready = true;
                         processNext();
                     });
-                    this.currentFrame = this.framesProcessed;
                     this.framesProcessed++;
                     //                    document.body.appendChild(canvas);
                 }
@@ -1477,7 +1484,7 @@ define('gifhandler',['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Utils
                 self.height = this.header.height;
             },
             gce: function gce(_gce) {
-                if (this.frameInfos.length == 0 || this.frameInfos[this.frameInfos.length - 1].gce) {
+                if (this.frameInfos.length === 0 || this.frameInfos[this.frameInfos.length - 1].gce) {
                     this.frameInfos.push({
                         gce: null,
                         cycleTime: null,
@@ -1524,14 +1531,24 @@ define('gifhandler',['utils', 'loop', 'gifworker', 'jsgif/gif'], function (Utils
     GifImage.prototype.gifInfo = null;
     GifImage.prototype.getFrame = GifImage_getFrame;
 
-    function GifImage_getFrame() {
+    function GifImage_getFrame(time) {
         var gifInfo = this.gifInfo;
-        if (gifInfo.block && Loop.time > gifInfo.renderTime) {
-            gifInfo.currentFrame = (gifInfo.currentFrame + 1) % this.frameInfos.length;
+
+        if (gifInfo.block) {
             var totalAnimationTime = this.frameInfos[this.frameInfos.length - 1].cycleTime;
-            gifInfo.renderTime = Math.floor(Loop.time / totalAnimationTime) * totalAnimationTime + this.frameInfos[gifInfo.currentFrame].cycleTime;
+            if (!gifInfo.frameSlot) {
+                gifInfo.frameSlot = [];
+                var cycle = 0;
+                for (var frame = 0; frame < this.frameInfos.length; frame++) {
+                    while (gifInfo.frameSlot.length < this.frameInfos[frame].cycleTime) {
+                        gifInfo.frameSlot.push(frame);
+                    }
+                }
+            }
+            var timeInCycle = Math.floor(time % totalAnimationTime);
+            return gifInfo.frameSlot[timeInCycle];
         }
-        return Math.min(gifInfo.currentFrame, gifInfo.maxFrameCompleted);
+        return gifInfo.maxFrameCompleted;
     }
 
     function destroyEverything() {
@@ -1876,9 +1893,9 @@ define('spritesheet',['threejs', 'utils', 'gifhandler', 'loader', 'packer'], fun
         }
     }
 
-    function getCut(index) {
+    function getCut(index, time) {
         var cut = cutArray[index];
-        var frame = cut && cut.gif ? cut.gif.getFrame() : 0;
+        var frame = cut && cut.gif ? cut.gif.getFrame(time) : 0;
         if (cut && cut.cut[frame] && cut.cut[frame].ready) {
             return cut.cut[frame];
         }
@@ -2071,10 +2088,6 @@ define('turbosort',[],function () {
         }
     }
 
-    function compareIndex(a, b) {
-        return indexFunction(a) - indexFunction(b);
-    }
-
     function turboSortHelper(array, offset, length) {
         var arrayInfo = getMinMax(array, offset, length);
         if (arrayInfo.inOrder) {
@@ -2135,7 +2148,6 @@ define('turbosort',[],function () {
         array[a] = array[b];
         array[b] = temp;
     }
-
     return turboSort;
 });
 //# sourceMappingURL=turbosort.js.map;
@@ -2148,7 +2160,7 @@ define('shaders/fragment-shader.glsl',[],function () {
 
 
 define('shaders/vertex-shader.glsl',[],function () {
-    return "\n    \nvarying vec2 vUv;\nattribute float tex;\nattribute float light;\nattribute vec3 spot;\nattribute vec4 quaternion;\nvarying float vTex;\nvarying float vLight;\nuniform vec3 vCam;\nuniform float curvature;\n\nvoid main()  {\n    vTex = tex;\n    vUv = uv;\n\n    vec3 newPosition = rotateVectorByQuaternion( position - spot, quaternion ) + spot;\n    vLight = 1.0/ sqrt(500.0 / distance(newPosition, vCam)) * light;\n\n    float dist = distance(newPosition, vCam);\n    newPosition.z = newPosition.z - curvature * (dist*dist)/20000.0;\n\n    vec4 mvPosition = modelViewMatrix * vec4(newPosition, 1.0 );\n    gl_Position = projectionMatrix * mvPosition;\n}    \n\n    ";
+    return "\n    \nvarying vec2 vUv;\nattribute float tex;\nattribute float light;\nattribute float wave;\nattribute vec3 spot;\nattribute vec4 quaternion;\nvarying float vTex;\nvarying float vLight;\nuniform vec3 vCam;\nuniform float curvature;\nuniform float time;\n\nvoid main()  {\n    vTex = tex;\n    vUv = uv;\n\n    vec3 newPosition = rotateVectorByQuaternion( position - spot, quaternion ) + spot;\n    vLight = 1.0/ sqrt(500.0 / distance(newPosition, vCam)) * light;\n\n    float dist = distance(newPosition, vCam);\n    if (curvature > 0.0) {\n        newPosition.z = newPosition.z - curvature * (dist*dist)/20000.0;\n    }\n    if (wave > 0.0) {\n        newPosition.z = newPosition.z + wave * sin(newPosition.x*5.0 - newPosition.y*7.0 + time);\n    }\n\n    vec4 mvPosition = modelViewMatrix * vec4(newPosition, 1.0 );\n    gl_Position = projectionMatrix * mvPosition;\n}    \n\n    ";
 });
 //# sourceMappingURL=vertex-shader.glsl.js.map;
 
@@ -2168,7 +2180,7 @@ define('shader',['shaders/fragment-shader.glsl', 'shaders/vertex-shader.glsl', '
 //# sourceMappingURL=shader.js.map;
 
 
-define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort', 'shader'], function (THREE, Utils, SpriteObject, SpriteSheet, Camera, turboSort, Shader) {
+define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort', 'shader', 'loop'], function (THREE, Utils, SpriteObject, SpriteSheet, Camera, turboSort, Shader, Loop) {
     'use strict';
 
     var planeGeometry = new THREE.PlaneBufferGeometry(1, 1);
@@ -2192,14 +2204,15 @@ define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'cam
         var self = this;
 
         this.display = function (spriteObject) {
-            var image = null;
-            var cut = spriteObject && spriteObject.visible ? SpriteSheet.getCut(spriteObject.img) : null;
+            var index = self.imageCount;
+            var image = self.images[index];
+
+            var cut = spriteObject && spriteObject.visible ? SpriteSheet.getCut(spriteObject.img, image ? image.time + Loop.time : Loop.time) : null;
             if (cut && cut.ready) {
-                var index = self.imageCount;
-                image = self.images[index];
                 if (!image) {
                     image = self.images[index] = new SpriteImage();
                     image.index = index;
+                    image.time = Math.random() * 10000 + Loop.time;
 
                     for (var j = 0; j < indices.length; j++) {
                         image.indexArray[j] = indices[j] + image.index * 4;
@@ -2249,6 +2262,12 @@ define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'cam
                     image.light = spriteObject.light;
                     image.lightDirty = true;
                 }
+
+                if (image.wave !== spriteObject.wave) {
+                    image.wave = spriteObject.wave;
+                    image.waveDirty = true;
+                }
+
                 image.spriteObject = spriteObject;
                 self.imageOrder[index] = image;
                 self.imageCount++;
@@ -2281,6 +2300,7 @@ define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'cam
     SpriteImage.prototype.uv = null;
     SpriteImage.prototype.vertices = null;
     SpriteImage.prototype.light = 1;
+    SpriteImage.prototype.wave = 0;
     SpriteImage.prototype.zIndex = 0;
     SpriteImage.prototype.quaternionArray = null;
     SpriteImage.prototype.positionDirty = true;
@@ -2288,6 +2308,7 @@ define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'cam
     SpriteImage.prototype.texDirty = true;
     SpriteImage.prototype.uvDirty = true;
     SpriteImage.prototype.lightDirty = true;
+    SpriteImage.prototype.waveDirty = true;
     SpriteImage.prototype.quatDirty = true;
 
     /**
@@ -2323,6 +2344,12 @@ define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'cam
                     type: "f",
                     get value() {
                         return spriteRenderer.curvature || 0;
+                    }
+                },
+                time: {
+                    type: "f",
+                    get value() {
+                        return performance.now() / 100;
                     }
                 }
             },
@@ -2397,6 +2424,12 @@ define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'cam
             if (previousAttribute) geometry.attributes.light.copyArray(previousAttribute.array);
             geometry.attributes.light.setDynamic(true);
         }
+        if (!geometry.attributes.wave || geometry.attributes.wave.count < imageCount * pointCount) {
+            previousAttribute = geometry.attributes.wave;
+            geometry.attributes.wave = new THREE.BufferAttribute(new Float32Array(imageCount * pointCount), 1);
+            if (previousAttribute) geometry.attributes.wave.copyArray(previousAttribute.array);
+            geometry.attributes.wave.setDynamic(true);
+        }
         if (!geometry.index || geometry.index.count < imageCount * planeGeometry.index.array.length) {
             previousAttribute = geometry.index;
             var _indices = planeGeometry.index.array;
@@ -2420,6 +2453,7 @@ define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'cam
         var geo_pos = geometry.attributes.position.array;
         var geo_tex = geometry.attributes.tex.array;
         var geo_light = geometry.attributes.light.array;
+        var geo_wave = geometry.attributes.wave.array;
         var geo_uv = geometry.attributes.uv.array;
         var geo_index = geometry.index.array;
 
@@ -2429,6 +2463,7 @@ define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'cam
         var verticesChanged = false;
         var uvChanged = false;
         var lightChanged = false;
+        var waveChanged = false;
 
         for (var i = 0; i < imageCount; i++) {
             var image = images[i];
@@ -2469,6 +2504,12 @@ define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'cam
                 image.lightDirty = false;
                 lightChanged = true;
             }
+
+            if (image.waveDirty) {
+                geo_wave.fill(image.wave, index * 4, index * 4 + 4);
+                image.waveDirty = false;
+                waveChanged = true;
+            }
         }
 
         for (var _i = 0; _i < imageCount; _i++) {
@@ -2481,6 +2522,9 @@ define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'cam
 
         if (lightChanged) {
             geometry.attributes.light.needsUpdate = true;
+        }
+        if (waveChanged) {
+            geometry.attributes.wave.needsUpdate = true;
         }
         if (quatChanged) {
             geometry.attributes.quaternion.needsUpdate = true;
@@ -2537,11 +2581,9 @@ define('collection',['utils', 'spritesheet', 'spriteobject', 'camera'], function
 
     'use strict';
 
-    function nop() {}
-
     function Collection(options, getSpriteFunction, forEach) {
         this.options = options || {};
-        this.getSprite = getSpriteFunction ? getSpriteFunction : nop;
+        this.getSprite = getSpriteFunction ? getSpriteFunction : Utils.nop;
         if (forEach) {
             this.forEach = forEach.bind(this);
         } else {
@@ -2556,14 +2598,14 @@ define('collection',['utils', 'spritesheet', 'spriteobject', 'camera'], function
     }
     Collection.prototype.pos = null;
     Collection.prototype.size = null;
-    Collection.prototype.getSprite = nop;
+    Collection.prototype.getSprite = Utils.nop;
     Collection.prototype.forEach = Grid_forEach;
     Collection.prototype.options = null;
-    Collection.prototype.getSprite = nop;
+    Collection.prototype.getSprite = Utils.nop;
     Collection.prototype.isCollection = true;
-    Collection.prototype.get = nop;
-    Collection.prototype.find = nop;
-    Collection.prototype.create = nop;
+    Collection.prototype.get = Utils.nop;
+    Collection.prototype.find = Utils.nop;
+    Collection.prototype.create = Utils.nop;
 
     /**
      *  FUNCTION DEFINITIONS

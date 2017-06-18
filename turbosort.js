@@ -53,10 +53,6 @@ define(function() {
         }
     }
 
-    function compareIndex(a,b) {
-        return indexFunction(a)-indexFunction(b);
-    }
-
     function turboSortHelper(array, offset, length) {
         const arrayInfo = getMinMax(array, offset, length);
         if(arrayInfo.inOrder) {
@@ -115,6 +111,5 @@ define(function() {
         array[a] = array[b];
         array[b] = temp;
     }
-
     return turboSort;
 });

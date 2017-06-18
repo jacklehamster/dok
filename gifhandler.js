@@ -30,15 +30,14 @@ define([
         var self = this;
 
         var gifInfo = {
-            currentFrame: 0,
             maxFrameCompleted: 0,
-            renderTime: 0,
             framesProcessed: 0,
             header: null,
             frameInfos: [],
             block: null,
             canvases: [],
             callbacks: [],
+            frameSlot: null,
             processNextFrame: function() {
                 var frame = this.framesProcessed;
                 var frameInfo = this.frameInfos[frame];
@@ -73,7 +72,6 @@ define([
                         self.frameInfos[frameInfo.frame].ready = true;
                         processNext();
                     });
-                    this.currentFrame = this.framesProcessed;
                     this.framesProcessed++;
 //                    document.body.appendChild(canvas);
                 }
@@ -84,7 +82,7 @@ define([
                 self.height = this.header.height;
             },
             gce: function (gce) {
-                if(this.frameInfos.length==0 || this.frameInfos[this.frameInfos.length-1].gce) {
+                if(this.frameInfos.length===0 || this.frameInfos[this.frameInfos.length-1].gce) {
                     this.frameInfos.push({
                         gce:null,
                         cycleTime:null,
@@ -132,15 +130,24 @@ define([
     GifImage.prototype.gifInfo = null;
     GifImage.prototype.getFrame = GifImage_getFrame;
 
-    function GifImage_getFrame() {
+    function GifImage_getFrame(time) {
         var gifInfo = this.gifInfo;
-        if(gifInfo.block && Loop.time > gifInfo.renderTime) {
-            gifInfo.currentFrame = (gifInfo.currentFrame+1) % this.frameInfos.length;
+
+        if(gifInfo.block) {
             var totalAnimationTime = this.frameInfos[this.frameInfos.length-1].cycleTime;
-            gifInfo.renderTime = Math.floor(Loop.time / totalAnimationTime) * totalAnimationTime
-                + this.frameInfos[gifInfo.currentFrame].cycleTime;
+            if(!gifInfo.frameSlot) {
+                gifInfo.frameSlot = [];
+                var cycle = 0;
+                for(var frame=0; frame<this.frameInfos.length; frame++) {
+                    while(gifInfo.frameSlot.length < this.frameInfos[frame].cycleTime) {
+                        gifInfo.frameSlot.push(frame);
+                    }
+                }
+            }
+            var timeInCycle = Math.floor(time % totalAnimationTime);
+            return gifInfo.frameSlot[timeInCycle];
         }
-        return Math.min(gifInfo.currentFrame,gifInfo.maxFrameCompleted);
+        return gifInfo.maxFrameCompleted;
     }
 
     function destroyEverything() {

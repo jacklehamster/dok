@@ -4,11 +4,9 @@ define(['utils', 'spritesheet', 'spriteobject', 'camera'], function (Utils, Spri
 
     'use strict';
 
-    function nop() {}
-
     function Collection(options, getSpriteFunction, forEach) {
         this.options = options || {};
-        this.getSprite = getSpriteFunction ? getSpriteFunction : nop;
+        this.getSprite = getSpriteFunction ? getSpriteFunction : Utils.nop;
         if (forEach) {
             this.forEach = forEach.bind(this);
         } else {
@@ -23,14 +21,14 @@ define(['utils', 'spritesheet', 'spriteobject', 'camera'], function (Utils, Spri
     }
     Collection.prototype.pos = null;
     Collection.prototype.size = null;
-    Collection.prototype.getSprite = nop;
+    Collection.prototype.getSprite = Utils.nop;
     Collection.prototype.forEach = Grid_forEach;
     Collection.prototype.options = null;
-    Collection.prototype.getSprite = nop;
+    Collection.prototype.getSprite = Utils.nop;
     Collection.prototype.isCollection = true;
-    Collection.prototype.get = nop;
-    Collection.prototype.find = nop;
-    Collection.prototype.create = nop;
+    Collection.prototype.get = Utils.nop;
+    Collection.prototype.find = Utils.nop;
+    Collection.prototype.create = Utils.nop;
 
     /**
      *  FUNCTION DEFINITIONS

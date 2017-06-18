@@ -6,7 +6,8 @@ define([
     'camera',
     'turbosort',
     'shader',
-], function(THREE, Utils, SpriteObject, SpriteSheet, Camera, turboSort, Shader) {
+    'loop',
+], function(THREE, Utils, SpriteObject, SpriteSheet, Camera, turboSort, Shader, Loop) {
     'use strict';
 
     const planeGeometry = new THREE.PlaneBufferGeometry(1, 1);
@@ -30,15 +31,17 @@ define([
         const self = this;
 
         this.display = function (spriteObject) {
-            let image = null;
+            const index = self.imageCount;
+            let image = self.images[index];
+
             const cut = spriteObject && spriteObject.visible
-                ? SpriteSheet.getCut(spriteObject.img) : null;
+                ? SpriteSheet.getCut(spriteObject.img, image ? image.time + Loop.time : Loop.time)
+                : null;
             if (cut && cut.ready) {
-                const index = self.imageCount;
-                image = self.images[index];
                 if(!image) {
                     image = self.images[index] = new SpriteImage();
                     image.index = index;
+                    image.time = Math.random()*10000+Loop.time;
 
                     for (let j=0; j<indices.length; j++) {
                         image.indexArray[j] = indices[j] + image.index*4;
@@ -103,6 +106,12 @@ define([
                     image.light = spriteObject.light;
                     image.lightDirty = true;
                 }
+
+                if(image.wave !== spriteObject.wave) {
+                    image.wave = spriteObject.wave;
+                    image.waveDirty = true;
+                }
+
                 image.spriteObject = spriteObject;
                 self.imageOrder[index] = image;
                 self.imageCount++;
@@ -135,6 +144,7 @@ define([
     SpriteImage.prototype.uv = null;
     SpriteImage.prototype.vertices = null;
     SpriteImage.prototype.light = 1;
+    SpriteImage.prototype.wave = 0;
     SpriteImage.prototype.zIndex = 0;
     SpriteImage.prototype.quaternionArray = null;
     SpriteImage.prototype.positionDirty = true;
@@ -142,6 +152,7 @@ define([
     SpriteImage.prototype.texDirty = true;
     SpriteImage.prototype.uvDirty = true;
     SpriteImage.prototype.lightDirty = true;
+    SpriteImage.prototype.waveDirty = true;
     SpriteImage.prototype.quatDirty = true;
 
     /**
@@ -180,6 +191,10 @@ define([
                 curvature: {
                     type: "f",
                     get value() { return spriteRenderer.curvature || 0; },
+                },
+                time: {
+                    type: "f",
+                    get value() { return performance.now()/100; },
                 },
             },
             vertexShader: Shader.vertexShader,
@@ -271,6 +286,15 @@ define([
                 geometry.attributes.light.copyArray(previousAttribute.array);
             geometry.attributes.light.setDynamic(true);
         }
+        if (!geometry.attributes.wave || geometry.attributes.wave.count < imageCount * pointCount) {
+            previousAttribute = geometry.attributes.wave;
+            geometry.attributes.wave = new THREE.BufferAttribute(
+                new Float32Array(imageCount * pointCount), 1
+            );
+            if(previousAttribute)
+                geometry.attributes.wave.copyArray(previousAttribute.array);
+            geometry.attributes.wave.setDynamic(true);
+        }
         if (!geometry.index || geometry.index.count < imageCount * planeGeometry.index.array.length) {
             previousAttribute = geometry.index;
             const indices = planeGeometry.index.array;
@@ -295,6 +319,7 @@ define([
         const geo_pos = geometry.attributes.position.array;
         const geo_tex = geometry.attributes.tex.array;
         const geo_light = geometry.attributes.light.array;
+        const geo_wave = geometry.attributes.wave.array;
         const geo_uv = geometry.attributes.uv.array;
         const geo_index = geometry.index.array;
 
@@ -304,6 +329,7 @@ define([
         let verticesChanged = false;
         let uvChanged = false;
         let lightChanged = false;
+        let waveChanged = false;
 
         for(let i=0;i<imageCount;i++) {
             const image = images[i];
@@ -344,6 +370,12 @@ define([
                 image.lightDirty = false;
                 lightChanged = true;
             }
+
+            if (image.waveDirty) {
+                geo_wave.fill(image.wave, index * 4, index * 4 + 4);
+                image.waveDirty = false;
+                waveChanged = true;
+            }
         }
 
         for(let i=0;i<imageCount;i++) {
@@ -356,6 +388,9 @@ define([
 
         if(lightChanged) {
             geometry.attributes.light.needsUpdate = true;
+        }
+        if(waveChanged) {
+            geometry.attributes.wave.needsUpdate = true;
         }
         if(quatChanged) {
             geometry.attributes.quaternion.needsUpdate = true;

@@ -1,7 +1,7 @@
 define(function() {
     function IDGenerator() {
-        var array = [];
-        var max = 1;
+        const array = [];
+        let max = 1;
         this.recycle = function(id) {
             array.push(id);
         };
@@ -14,7 +14,5 @@ define(function() {
     }
     IDGenerator.prototype.recycle = null;
     IDGenerator.prototype.get = null;
-
-
     return IDGenerator;
 });

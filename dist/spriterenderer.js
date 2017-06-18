@@ -1,6 +1,6 @@
 'use strict';
 
-define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort', 'shader'], function (THREE, Utils, SpriteObject, SpriteSheet, Camera, turboSort, Shader) {
+define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort', 'shader', 'loop'], function (THREE, Utils, SpriteObject, SpriteSheet, Camera, turboSort, Shader, Loop) {
     'use strict';
 
     var planeGeometry = new THREE.PlaneBufferGeometry(1, 1);
@@ -24,14 +24,15 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
         var self = this;
 
         this.display = function (spriteObject) {
-            var image = null;
-            var cut = spriteObject && spriteObject.visible ? SpriteSheet.getCut(spriteObject.img) : null;
+            var index = self.imageCount;
+            var image = self.images[index];
+
+            var cut = spriteObject && spriteObject.visible ? SpriteSheet.getCut(spriteObject.img, image ? image.time + Loop.time : Loop.time) : null;
             if (cut && cut.ready) {
-                var index = self.imageCount;
-                image = self.images[index];
                 if (!image) {
                     image = self.images[index] = new SpriteImage();
                     image.index = index;
+                    image.time = Math.random() * 10000 + Loop.time;
 
                     for (var j = 0; j < indices.length; j++) {
                         image.indexArray[j] = indices[j] + image.index * 4;
@@ -81,6 +82,12 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
                     image.light = spriteObject.light;
                     image.lightDirty = true;
                 }
+
+                if (image.wave !== spriteObject.wave) {
+                    image.wave = spriteObject.wave;
+                    image.waveDirty = true;
+                }
+
                 image.spriteObject = spriteObject;
                 self.imageOrder[index] = image;
                 self.imageCount++;
@@ -113,6 +120,7 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
     SpriteImage.prototype.uv = null;
     SpriteImage.prototype.vertices = null;
     SpriteImage.prototype.light = 1;
+    SpriteImage.prototype.wave = 0;
     SpriteImage.prototype.zIndex = 0;
     SpriteImage.prototype.quaternionArray = null;
     SpriteImage.prototype.positionDirty = true;
@@ -120,6 +128,7 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
     SpriteImage.prototype.texDirty = true;
     SpriteImage.prototype.uvDirty = true;
     SpriteImage.prototype.lightDirty = true;
+    SpriteImage.prototype.waveDirty = true;
     SpriteImage.prototype.quatDirty = true;
 
     /**
@@ -155,6 +164,12 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
                     type: "f",
                     get value() {
                         return spriteRenderer.curvature || 0;
+                    }
+                },
+                time: {
+                    type: "f",
+                    get value() {
+                        return performance.now() / 100;
                     }
                 }
             },
@@ -229,6 +244,12 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
             if (previousAttribute) geometry.attributes.light.copyArray(previousAttribute.array);
             geometry.attributes.light.setDynamic(true);
         }
+        if (!geometry.attributes.wave || geometry.attributes.wave.count < imageCount * pointCount) {
+            previousAttribute = geometry.attributes.wave;
+            geometry.attributes.wave = new THREE.BufferAttribute(new Float32Array(imageCount * pointCount), 1);
+            if (previousAttribute) geometry.attributes.wave.copyArray(previousAttribute.array);
+            geometry.attributes.wave.setDynamic(true);
+        }
         if (!geometry.index || geometry.index.count < imageCount * planeGeometry.index.array.length) {
             previousAttribute = geometry.index;
             var _indices = planeGeometry.index.array;
@@ -252,6 +273,7 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
         var geo_pos = geometry.attributes.position.array;
         var geo_tex = geometry.attributes.tex.array;
         var geo_light = geometry.attributes.light.array;
+        var geo_wave = geometry.attributes.wave.array;
         var geo_uv = geometry.attributes.uv.array;
         var geo_index = geometry.index.array;
 
@@ -261,6 +283,7 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
         var verticesChanged = false;
         var uvChanged = false;
         var lightChanged = false;
+        var waveChanged = false;
 
         for (var i = 0; i < imageCount; i++) {
             var image = images[i];
@@ -301,6 +324,12 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
                 image.lightDirty = false;
                 lightChanged = true;
             }
+
+            if (image.waveDirty) {
+                geo_wave.fill(image.wave, index * 4, index * 4 + 4);
+                image.waveDirty = false;
+                waveChanged = true;
+            }
         }
 
         for (var _i = 0; _i < imageCount; _i++) {
@@ -313,6 +342,9 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
 
         if (lightChanged) {
             geometry.attributes.light.needsUpdate = true;
+        }
+        if (waveChanged) {
+            geometry.attributes.wave.needsUpdate = true;
         }
         if (quatChanged) {
             geometry.attributes.quaternion.needsUpdate = true;
