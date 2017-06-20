@@ -117,6 +117,7 @@ define(['threejs', 'utils', 'gifhandler', 'loader', 'packer'], function (THREE, 
 
     function processCanvas(canvas, processString, outputCanvas) {
         //  check size split
+        processString = processString.split("?")[0];
         var outputCtx = outputCanvas.getContext("2d");
         var splits = processString.split(",");
         if (splits.length === 4 && splits.every(function (num) {
@@ -174,12 +175,12 @@ define(['threejs', 'utils', 'gifhandler', 'loader', 'packer'], function (THREE, 
             initCanvas(outputCanvas);
             var ctx = canvas.getContext("2d");
             var data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            for (var i = 0; i < data.data.length; i += 4) {
-                if (data.data[i + 3] !== 0) {
-                    data.data[i] = 0;
-                    data.data[i + 1] = 0;
-                    data.data[i + 2] = 0;
-                    data.data[i + 3] = 127;
+            for (var _i = 0; _i < data.data.length; _i += 4) {
+                if (data.data[_i + 3] !== 0) {
+                    data.data[_i] = 0;
+                    data.data[_i + 1] = 0;
+                    data.data[_i + 2] = 0;
+                    data.data[_i + 3] = 127;
                 }
             }
             outputCtx.putImageData(data, 0, 0);
@@ -244,8 +245,8 @@ define(['threejs', 'utils', 'gifhandler', 'loader', 'packer'], function (THREE, 
 
             var uvX = slot.x / SPRITE_SHEET_SIZE;
             var uvY = slot.y / SPRITE_SHEET_SIZE;
-            var uvW = canvas.width / SPRITE_SHEET_SIZE;
-            var uvH = canvas.height / SPRITE_SHEET_SIZE;
+            var uvW = (canvas.width - 1) / SPRITE_SHEET_SIZE;
+            var uvH = (canvas.height - 1) / SPRITE_SHEET_SIZE;
             var uvOrder = planeGeometry.attributes.uv.array;
 
             var cutcut = [uvX, 1 - uvY - uvH, uvX + uvW, 1 - uvY];
