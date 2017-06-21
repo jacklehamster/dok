@@ -29,6 +29,9 @@ define([
         });
 
         function checkResize() {
+            if (!windowResized) {
+                return;
+            }
             const width = renderer.domElement.parentElement.offsetWidth;
             const height = renderer.domElement.parentElement.offsetHeight;
             if(sceneWidth !== width || sceneHeight !== height) {
@@ -37,6 +40,7 @@ define([
                 renderer.setSize( width, height );
                 Camera.checkWindowSize( width, height );
             }
+            windowResized = false;
         }
     }
     Engine.prototype.renderer = null;

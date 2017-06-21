@@ -1182,6 +1182,8 @@ define('camera', ['threejs', 'loop'], function (THREE, Loop) {
 
     function checkWindowSize(width, height) {
         if (gameWidth !== width || gameHeight !== height) {
+            gameWidth = width;
+            gameHeight = height;
             camera2d.left = -gameWidth / 2;
             camera2d.right = gameWidth / 2;
             camera2d.top = gameHeight / 2;
@@ -1189,8 +1191,6 @@ define('camera', ['threejs', 'loop'], function (THREE, Loop) {
             camera2d.updateProjectionMatrix();
             camera3d.aspect = gameWidth / gameHeight;
             camera3d.updateProjectionMatrix();
-            gameWidth = width;
-            gameHeight = height;
         }
     }
 
@@ -3014,14 +3014,14 @@ define('engine', ['threejs', 'loader', 'loop', 'camera'], function (THREE, Loade
         });
 
         function checkResize() {
-            if (!windowResized) return;
             var width = renderer.domElement.parentElement.offsetWidth;
             var height = renderer.domElement.parentElement.offsetHeight;
             if (sceneWidth !== width || sceneHeight !== height) {
+                sceneWidth = width;
+                sceneHeight = height;
                 renderer.setSize(width, height);
                 Camera.checkWindowSize(width, height);
             }
-            windowResized = false;
         }
     }
     Engine.prototype.renderer = null;
