@@ -28,14 +28,14 @@ define(['threejs', 'loader', 'loop', 'camera'], function (THREE, Loader, Loop, C
         });
 
         function checkResize() {
-            if (!windowResized) return;
             var width = renderer.domElement.parentElement.offsetWidth;
             var height = renderer.domElement.parentElement.offsetHeight;
             if (sceneWidth !== width || sceneHeight !== height) {
+                sceneWidth = width;
+                sceneHeight = height;
                 renderer.setSize(width, height);
                 Camera.checkWindowSize(width, height);
             }
-            windowResized = false;
         }
     }
     Engine.prototype.renderer = null;

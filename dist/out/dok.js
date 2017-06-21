@@ -1085,7 +1085,7 @@ define('camera', ['threejs', 'loop'], function (THREE, Loop) {
 
     var gameWidth = innerWidth,
         gameHeight = innerHeight;
-    var camera;
+    var camera = void 0;
     var camera2d = new THREE.OrthographicCamera(-gameWidth / 2, gameWidth / 2, gameHeight / 2, -gameHeight / 2, 0.1, 1000000);
     var camera3d = new THREE.PerspectiveCamera(75, gameWidth / gameHeight, 0.1, 1000000);
     var cameraQuaternionData = {
@@ -1180,8 +1180,8 @@ define('camera', ['threejs', 'loop'], function (THREE, Loop) {
         return quaternions;
     }
 
-    function checkWindowSize() {
-        if (gameWidth !== innerWidth || gameHeight !== innerHeight) {
+    function checkWindowSize(width, height) {
+        if (gameWidth !== width || gameHeight !== height) {
             camera2d.left = -gameWidth / 2;
             camera2d.right = gameWidth / 2;
             camera2d.top = gameHeight / 2;
@@ -1189,8 +1189,8 @@ define('camera', ['threejs', 'loop'], function (THREE, Loop) {
             camera2d.updateProjectionMatrix();
             camera3d.aspect = gameWidth / gameHeight;
             camera3d.updateProjectionMatrix();
-            gameWidth = innerWidth;
-            gameHeight = innerHeight;
+            gameWidth = width;
+            gameHeight = height;
         }
     }
 
@@ -1207,14 +1207,13 @@ define('camera', ['threejs', 'loop'], function (THREE, Loop) {
     Camera.getCameraQuaternionData = getCameraQuaternionData;
     Camera.shadowQuatArray = shadowQuatArray;
     Camera.quaternions = quaternionArrays();
+    Camera.checkWindowSize = checkWindowSize;
 
     /**
      *   PROCESSES
      */
     initCameras();
     setCamera3d(true);
-
-    Loop.addLoop(checkWindowSize);
 
     return Camera;
 });
@@ -1819,6 +1818,7 @@ define('spritesheet', ['threejs', 'utils', 'gifhandler', 'loader', 'packer'], fu
 
     function processCanvas(canvas, processString, outputCanvas) {
         //  check size split
+        processString = processString.split("?")[0];
         var outputCtx = outputCanvas.getContext("2d");
         var splits = processString.split(",");
         if (splits.length === 4 && splits.every(function (num) {
@@ -1876,12 +1876,12 @@ define('spritesheet', ['threejs', 'utils', 'gifhandler', 'loader', 'packer'], fu
             initCanvas(outputCanvas);
             var ctx = canvas.getContext("2d");
             var data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            for (var i = 0; i < data.data.length; i += 4) {
-                if (data.data[i + 3] !== 0) {
-                    data.data[i] = 0;
-                    data.data[i + 1] = 0;
-                    data.data[i + 2] = 0;
-                    data.data[i + 3] = 127;
+            for (var _i = 0; _i < data.data.length; _i += 4) {
+                if (data.data[_i + 3] !== 0) {
+                    data.data[_i] = 0;
+                    data.data[_i + 1] = 0;
+                    data.data[_i + 2] = 0;
+                    data.data[_i + 3] = 127;
                 }
             }
             outputCtx.putImageData(data, 0, 0);
@@ -1946,8 +1946,8 @@ define('spritesheet', ['threejs', 'utils', 'gifhandler', 'loader', 'packer'], fu
 
             var uvX = slot.x / SPRITE_SHEET_SIZE;
             var uvY = slot.y / SPRITE_SHEET_SIZE;
-            var uvW = canvas.width / SPRITE_SHEET_SIZE;
-            var uvH = canvas.height / SPRITE_SHEET_SIZE;
+            var uvW = (canvas.width - 1) / SPRITE_SHEET_SIZE;
+            var uvH = (canvas.height - 1) / SPRITE_SHEET_SIZE;
             var uvOrder = planeGeometry.attributes.uv.array;
 
             var cutcut = [uvX, 1 - uvY - uvH, uvX + uvW, 1 - uvY];
@@ -1960,7 +1960,6 @@ define('spritesheet', ['threejs', 'utils', 'gifhandler', 'loader', 'packer'], fu
                 cut.cut[frame].uv[u] = cutcut[uvOrder[u] * 2 + u % 2];
             }
             cut.cut[frame].ready = true;
-            //            console.log(canvas);
             return cut;
         } else {
             return cut;
@@ -1988,7 +1987,6 @@ define('spritesheet', ['threejs', 'utils', 'gifhandler', 'loader', 'packer'], fu
                     }
                 }
             }
-            console.log(root);
             return root;
         }
     }
@@ -2288,6 +2286,7 @@ define('spriterenderer', ['threejs', 'utils', 'spriteobject', 'spritesheet', 'ca
     SpriteRenderer.prototype.render = render;
     SpriteRenderer.prototype.updateGraphics = updateGraphics;
     SpriteRenderer.prototype.clear = clear;
+    SpriteRenderer.prototype.processGraphics = processGraphics;
 
     function SpriteImage() {
         this.position = new THREE.Vector3();
@@ -2449,7 +2448,10 @@ define('spriterenderer', ['threejs', 'utils', 'spriteobject', 'spritesheet', 'ca
 
     function updateGraphics() {
         this.render();
+        this.processGraphics();
+    }
 
+    function processGraphics() {
         var images = this.images;
         var imageOrder = this.imageOrder;
         var imageCount = this.imageCount;
@@ -2760,10 +2762,13 @@ define('collection', ['utils', 'spritesheet', 'spriteobject', 'camera'], functio
             var areaId = getAreaHashId(x, y);
             var area = spriteHash[areaId];
             array.length = 0;
-            for (var i in area) {
-                var sprite = area[i];
-                if (Math.floor(sprite.x) === x && Math.floor(sprite.y) === y) {
-                    array.push(sprite);
+            if (area) {
+                var props = area.getOwnPropertyNames();
+                for (var i = 0; i < pros.length; i++) {
+                    var sprite = area[props[i]];
+                    if (Math.floor(sprite.x) === x && Math.floor(sprite.y) === y) {
+                        array.push(sprite);
+                    }
                 }
             }
             return array.length ? array : null;
@@ -2981,7 +2986,54 @@ define('mouse', ['utils'], function (Utils) {
 //# sourceMappingURL=mouse.js.map;
 
 
-define('dobuki', ['utils', 'loop', 'gifHandler', 'camera', 'objectpool', 'spriteobject', 'packer', 'spritesheet', 'spriterenderer', 'collection', 'mouse', 'loader'], function (Utils, Loop, GifHandler, Camera, ObjectPool, SpriteObject, Packer, SpriteSheet, SpriteRenderer, Collection, Mouse, Loader) {
+define('engine', ['threejs', 'loader', 'loop', 'camera'], function (THREE, Loader, Loop, Camera) {
+    function Engine(options) {
+        var self = this;
+        options = options || {};
+        var renderer = this.renderer = new THREE.WebGLRenderer({
+            canvas: options.canvas
+        });
+        this.renderer.sortObjects = false;
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.setClearColor('white', 1);
+        window.addEventListener("resize", function (e) {
+            windowResized = true;
+        });
+        var scene = this.scene = new THREE.Scene();
+        var sceneWidth = 0,
+            sceneHeight = 0,
+            windowResized = true;
+        this.renderer.domElement.style.display = "none";
+        Loader.setOnLoad(function () {
+            renderer.domElement.style.display = "";
+            Loop.addLoop(function () {
+                checkResize();
+                renderer.render(scene, Camera.getCamera());
+            });
+            self.ready = true;
+        });
+
+        function checkResize() {
+            if (!windowResized) return;
+            var width = renderer.domElement.parentElement.offsetWidth;
+            var height = renderer.domElement.parentElement.offsetHeight;
+            if (sceneWidth !== width || sceneHeight !== height) {
+                renderer.setSize(width, height);
+                Camera.checkWindowSize(width, height);
+            }
+            windowResized = false;
+        }
+    }
+    Engine.prototype.renderer = null;
+    Engine.prototype.scene = null;
+    Engine.prototype.ready = false;
+
+    return Engine;
+});
+//# sourceMappingURL=engine.js.map;
+
+
+define('dobuki', ['utils', 'loop', 'gifHandler', 'camera', 'objectpool', 'spriteobject', 'packer', 'spritesheet', 'spriterenderer', 'collection', 'mouse', 'loader', 'engine'], function (Utils, Loop, GifHandler, Camera, ObjectPool, SpriteObject, Packer, SpriteSheet, SpriteRenderer, Collection, Mouse, Loader, Engine) {
 
     return {
         Utils: Utils,
@@ -2994,7 +3046,8 @@ define('dobuki', ['utils', 'loop', 'gifHandler', 'camera', 'objectpool', 'sprite
         SpriteRenderer: SpriteRenderer,
         Collection: Collection,
         Mouse: Mouse,
-        Loader: Loader
+        Loader: Loader,
+        Engine: Engine
     };
 });
 //# sourceMappingURL=dobuki.js.map;

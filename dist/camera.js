@@ -102,6 +102,8 @@ define(['threejs', 'loop'], function (THREE, Loop) {
 
     function checkWindowSize(width, height) {
         if (gameWidth !== width || gameHeight !== height) {
+            gameWidth = width;
+            gameHeight = height;
             camera2d.left = -gameWidth / 2;
             camera2d.right = gameWidth / 2;
             camera2d.top = gameHeight / 2;
@@ -109,8 +111,6 @@ define(['threejs', 'loop'], function (THREE, Loop) {
             camera2d.updateProjectionMatrix();
             camera3d.aspect = gameWidth / gameHeight;
             camera3d.updateProjectionMatrix();
-            gameWidth = width;
-            gameHeight = height;
         }
     }
 
