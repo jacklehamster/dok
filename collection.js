@@ -201,10 +201,13 @@ define([
             const areaId = getAreaHashId(x,y);
             const area = spriteHash[areaId];
             array.length = 0;
-            for(let i in area) {
-                const sprite = area[i];
-                if(Math.floor(sprite.x)===x && Math.floor(sprite.y)===y) {
-                    array.push(sprite);
+            if(area) {
+                const props = area.getOwnPropertyNames();
+                for(let i=0;i<pros.length;i++) {
+                    const sprite = area[props[i]];
+                    if(Math.floor(sprite.x)===x && Math.floor(sprite.y)===y) {
+                        array.push(sprite);
+                    }
                 }
             }
             return array.length ? array : null;

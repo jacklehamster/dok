@@ -11,6 +11,7 @@ define([
     'collection',
     'mouse',
     'loader',
+    'engine',
 ], function(
     Utils,
     Loop,
@@ -24,6 +25,7 @@ define([
     Collection,
     Mouse,
     Loader,
+    Engine,
 ) {
 
     return {
@@ -38,5 +40,6 @@ define([
         Collection,
         Mouse,
         Loader,
+        Engine,
     };
 });

@@ -126,6 +126,7 @@ define([
     SpriteRenderer.prototype.render = render;
     SpriteRenderer.prototype.updateGraphics = updateGraphics;
     SpriteRenderer.prototype.clear = clear;
+    SpriteRenderer.prototype.processGraphics = processGraphics;
 
     function SpriteImage() {
         this.position = new THREE.Vector3();
@@ -309,7 +310,10 @@ define([
 
     function updateGraphics() {
         this.render();
+        this.processGraphics();
+    }
 
+    function processGraphics() {
         const images = this.images;
         const imageOrder = this.imageOrder;
         const imageCount = this.imageCount;

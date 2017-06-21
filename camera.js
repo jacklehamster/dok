@@ -4,19 +4,19 @@ define([
     'use strict';
 
     let gameWidth = innerWidth, gameHeight = innerHeight;
-    var camera;
-    var camera2d = new THREE.OrthographicCamera(
+    let camera;
+    const camera2d = new THREE.OrthographicCamera(
         -gameWidth / 2, gameWidth / 2,
         gameHeight / 2, -gameHeight / 2,
         0.1, 1000000);
-    var camera3d = new THREE.PerspectiveCamera(75, gameWidth / gameHeight, 0.1, 1000000);
-    var cameraQuaternionData = {
+    const camera3d = new THREE.PerspectiveCamera(75, gameWidth / gameHeight, 0.1, 1000000);
+    const cameraQuaternionData = {
             array: new Float32Array(4),
             forwardMovement: new THREE.Vector3(0, 0, 1),
             version: 0,
         }, lastQuat = new THREE.Quaternion(), tempQuat = new THREE.Quaternion(),
         tempQuatArray = new Float32Array(4), upVector = new THREE.Vector3(0, 1, 0);
-    var groundQuat = new THREE.Quaternion().setFromAxisAngle(
+    const groundQuat = new THREE.Quaternion().setFromAxisAngle(
         new THREE.Vector3(1, 0, 0), -Math.PI / 2
     );
 
@@ -85,14 +85,14 @@ define([
     }
 
     function shadowQuatArray(x, y) {
-        var angle = -Math.atan2(y - camera.position.z, x - camera.position.x) - Math.PI / 2;
+        const angle = -Math.atan2(y - camera.position.z, x - camera.position.x) - Math.PI / 2;
         tempQuat.setFromAxisAngle(upVector, angle);
         tempQuat.multiply(groundQuat);
         return tempQuat.toArray(tempQuatArray);
     }
 
     function quaternionArrays() {
-        var quaternions = {};
+        const quaternions = {};
         quaternions.groundQuaternionArray =  new THREE.Quaternion().setFromAxisAngle(
             new THREE.Vector3(1,0,0), -Math.PI/2
         ).toArray(new Float32Array(4));
@@ -112,8 +112,8 @@ define([
         return quaternions;
     }
 
-    function checkWindowSize() {
-        if (gameWidth !== innerWidth || gameHeight !== innerHeight) {
+    function checkWindowSize(width, height) {
+        if (gameWidth !== width || gameHeight !== height) {
             camera2d.left = -gameWidth / 2;
             camera2d.right = gameWidth / 2;
             camera2d.top = gameHeight / 2;
@@ -121,8 +121,8 @@ define([
             camera2d.updateProjectionMatrix();
             camera3d.aspect = gameWidth / gameHeight;
             camera3d.updateProjectionMatrix();
-            gameWidth = innerWidth;
-            gameHeight = innerHeight;
+            gameWidth = width;
+            gameHeight = height;
         }
     }
 
@@ -140,14 +140,13 @@ define([
     Camera.getCameraQuaternionData = getCameraQuaternionData;
     Camera.shadowQuatArray = shadowQuatArray;
     Camera.quaternions = quaternionArrays();
+    Camera.checkWindowSize = checkWindowSize;
 
     /**
      *   PROCESSES
      */
     initCameras();
     setCamera3d(true);
-
-    Loop.addLoop(checkWindowSize);
 
     return Camera;
 });
