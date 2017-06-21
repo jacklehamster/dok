@@ -102,6 +102,7 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
     SpriteRenderer.prototype.render = render;
     SpriteRenderer.prototype.updateGraphics = updateGraphics;
     SpriteRenderer.prototype.clear = clear;
+    SpriteRenderer.prototype.processGraphics = processGraphics;
 
     function SpriteImage() {
         this.position = new THREE.Vector3();
@@ -263,7 +264,10 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
 
     function updateGraphics() {
         this.render();
+        this.processGraphics();
+    }
 
+    function processGraphics() {
         var images = this.images;
         var imageOrder = this.imageOrder;
         var imageCount = this.imageCount;

@@ -5,7 +5,7 @@ define(['threejs', 'loop'], function (THREE, Loop) {
 
     var gameWidth = innerWidth,
         gameHeight = innerHeight;
-    var camera;
+    var camera = void 0;
     var camera2d = new THREE.OrthographicCamera(-gameWidth / 2, gameWidth / 2, gameHeight / 2, -gameHeight / 2, 0.1, 1000000);
     var camera3d = new THREE.PerspectiveCamera(75, gameWidth / gameHeight, 0.1, 1000000);
     var cameraQuaternionData = {
@@ -100,8 +100,8 @@ define(['threejs', 'loop'], function (THREE, Loop) {
         return quaternions;
     }
 
-    function checkWindowSize() {
-        if (gameWidth !== innerWidth || gameHeight !== innerHeight) {
+    function checkWindowSize(width, height) {
+        if (gameWidth !== width || gameHeight !== height) {
             camera2d.left = -gameWidth / 2;
             camera2d.right = gameWidth / 2;
             camera2d.top = gameHeight / 2;
@@ -109,8 +109,8 @@ define(['threejs', 'loop'], function (THREE, Loop) {
             camera2d.updateProjectionMatrix();
             camera3d.aspect = gameWidth / gameHeight;
             camera3d.updateProjectionMatrix();
-            gameWidth = innerWidth;
-            gameHeight = innerHeight;
+            gameWidth = width;
+            gameHeight = height;
         }
     }
 
@@ -127,14 +127,13 @@ define(['threejs', 'loop'], function (THREE, Loop) {
     Camera.getCameraQuaternionData = getCameraQuaternionData;
     Camera.shadowQuatArray = shadowQuatArray;
     Camera.quaternions = quaternionArrays();
+    Camera.checkWindowSize = checkWindowSize;
 
     /**
      *   PROCESSES
      */
     initCameras();
     setCamera3d(true);
-
-    Loop.addLoop(checkWindowSize);
 
     return Camera;
 });
