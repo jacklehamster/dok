@@ -142,10 +142,7 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
     }
 
     function createMesh(spriteRenderer) {
-        var geometry = new THREE.BufferGeometry();
-        var vertices = new Float32Array([-1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0]);
-        geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
-        var mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
+        var mesh = new THREE.Mesh(createGeometry(), new THREE.MeshBasicMaterial());
 
         mesh.material = new THREE.ShaderMaterial({
             uniforms: uniforms = {
@@ -164,7 +161,7 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
                 curvature: {
                     type: "f",
                     get value() {
-                        return spriteRenderer.curvature || 0;
+                        return spriteRenderer.curvature;
                     }
                 },
                 time: {
@@ -183,6 +180,19 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
 
         mesh.frustumCulled = false;
         return mesh;
+    }
+
+    function createGeometry() {
+        var geometry = new THREE.BufferGeometry();
+        geometry.attributes.position = new THREE.BufferAttribute(new Float32Array(0), 3);
+        geometry.attributes.spot = new THREE.BufferAttribute(new Float32Array(0), 3);
+        geometry.attributes.quaternion = new THREE.BufferAttribute(new Float32Array(0), 4);
+        geometry.attributes.uv = new THREE.BufferAttribute(new Float32Array(0), 2);
+        geometry.attributes.tex = new THREE.BufferAttribute(new Float32Array(0), 1);
+        geometry.attributes.light = new THREE.BufferAttribute(new Float32Array(0), 1);
+        geometry.attributes.wave = new THREE.BufferAttribute(new Float32Array(0), 1);
+        geometry.index = new THREE.BufferAttribute(new Uint16Array(0), 1);
+        return geometry;
     }
 
     function sortImages(images, count) {
@@ -204,54 +214,54 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
 
     function render() {
         var imageCount = this.imageCount;
-        var pointCount = planeGeometry.attributes.position.count;
+        var totalPointCount = imageCount * pointCount;
         var previousAttribute = void 0;
 
         var mesh = this.mesh;
         var geometry = mesh.geometry;
-        if (!geometry.attributes.position || geometry.attributes.position.count < imageCount * pointCount) {
+        if (geometry.attributes.position.count < totalPointCount) {
             previousAttribute = geometry.attributes.position;
             geometry.attributes.position = new THREE.BufferAttribute(new Float32Array(imageCount * pointCount * 3), 3);
             if (previousAttribute) geometry.attributes.position.copyArray(previousAttribute.array);
             geometry.attributes.position.setDynamic(true);
         }
-        if (!geometry.attributes.spot || geometry.attributes.spot.count < imageCount * pointCount) {
+        if (geometry.attributes.spot.count < totalPointCount) {
             previousAttribute = geometry.attributes.spot;
             geometry.attributes.spot = new THREE.BufferAttribute(new Float32Array(imageCount * pointCount * 3), 3);
             if (previousAttribute) geometry.attributes.spot.copyArray(previousAttribute.array);
             geometry.attributes.spot.setDynamic(true);
         }
-        if (!geometry.attributes.quaternion || geometry.attributes.quaternion.count < imageCount * pointCount) {
+        if (geometry.attributes.quaternion.count < totalPointCount) {
             previousAttribute = geometry.attributes.quaternion;
             geometry.attributes.quaternion = new THREE.BufferAttribute(new Float32Array(imageCount * pointCount * 4), 4);
             if (previousAttribute) geometry.attributes.quaternion.copyArray(previousAttribute.array);
             geometry.attributes.quaternion.setDynamic(true);
         }
-        if (!geometry.attributes.uv || geometry.attributes.uv.count < imageCount * pointCount) {
+        if (geometry.attributes.uv.count < totalPointCount) {
             previousAttribute = geometry.attributes.uv;
             geometry.attributes.uv = new THREE.BufferAttribute(new Float32Array(imageCount * pointCount * 2), 2);
             if (previousAttribute) geometry.attributes.uv.copyArray(previousAttribute.array);
             geometry.attributes.uv.setDynamic(true);
         }
-        if (!geometry.attributes.tex || geometry.attributes.tex.count < imageCount * pointCount) {
+        if (geometry.attributes.tex.count < totalPointCount) {
             previousAttribute = geometry.attributes.tex;
             geometry.attributes.tex = new THREE.BufferAttribute(new Float32Array(imageCount * pointCount), 1);
             if (previousAttribute) geometry.attributes.tex.copyArray(previousAttribute.array);
             geometry.attributes.tex.setDynamic(true);
         }
-        if (!geometry.attributes.light || geometry.attributes.light.count < imageCount * pointCount) {
+        if (geometry.attributes.light.count < totalPointCount) {
             previousAttribute = geometry.attributes.light;
             geometry.attributes.light = new THREE.BufferAttribute(new Float32Array(imageCount * pointCount), 1);
             if (previousAttribute) geometry.attributes.light.copyArray(previousAttribute.array);
             geometry.attributes.light.setDynamic(true);
         }
-        if (!geometry.attributes.wave || geometry.attributes.wave.count < imageCount * pointCount) {
+        if (geometry.attributes.wave.count < totalPointCount) {
             previousAttribute = geometry.attributes.wave;
             geometry.attributes.wave = new THREE.BufferAttribute(new Float32Array(imageCount * pointCount), 1);
             if (previousAttribute) geometry.attributes.wave.copyArray(previousAttribute.array);
             geometry.attributes.wave.setDynamic(true);
         }
-        if (!geometry.index || geometry.index.count < imageCount * planeGeometry.index.array.length) {
+        if (geometry.index.count < imageCount * planeGeometry.index.array.length) {
             previousAttribute = geometry.index;
             var _indices = planeGeometry.index.array;
             geometry.index = new THREE.BufferAttribute(new Uint16Array(imageCount * _indices.length), 1);

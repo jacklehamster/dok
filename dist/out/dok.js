@@ -3014,6 +3014,9 @@ define('engine', ['threejs', 'loader', 'loop', 'camera'], function (THREE, Loade
         });
 
         function checkResize() {
+            if (!windowResized) {
+                return;
+            }
             var width = renderer.domElement.parentElement.offsetWidth;
             var height = renderer.domElement.parentElement.offsetHeight;
             if (sceneWidth !== width || sceneHeight !== height) {
@@ -3022,6 +3025,7 @@ define('engine', ['threejs', 'loader', 'loop', 'camera'], function (THREE, Loade
                 renderer.setSize(width, height);
                 Camera.checkWindowSize(width, height);
             }
+            windowResized = false;
         }
     }
     Engine.prototype.renderer = null;
