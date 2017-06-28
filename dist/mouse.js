@@ -69,7 +69,12 @@ define(['utils'], function (Utils) {
         e = e || event;
         var touches = e.changedTouches;
         if (!touches) {
-            var buttonDown = 'buttons' in e && e.buttons === 1 || (e.which || e.button) === 1;
+            var buttonDown = 'buttons' in e && e.buttons === 1 || e.button === 1;
+            if (buttonDown && !mdown) {
+                spot.x = e.pageX;
+                spot.y = e.pageY;
+                mdown = true;
+            }
 
             if (buttonDown && mdown) {
                 var newX = e.pageX;
@@ -150,6 +155,7 @@ define(['utils'], function (Utils) {
         element.addEventListener("mousemove", onMove);
         element.addEventListener("touchmove", onMove);
         element.addEventListener("wheel", onWheel);
+        element.addEventListener("mouseleave", onUp);
     }
 
     function deactivateTouch() {
@@ -161,6 +167,7 @@ define(['utils'], function (Utils) {
         element.removeEventListener("mousemove", onMove);
         element.removeEventListener("touchmove", onMove);
         element.removeEventListener("wheel", onWheel);
+        element.removeEventListener("mouseleave", onUp);
     }
 
     function setMainElement(elem) {

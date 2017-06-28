@@ -155,8 +155,9 @@ define(['utils', 'spritesheet', 'spriteobject', 'camera'], function (Utils, Spri
                     var areaId = getAreaHashIdWithArea(_x2, _y2);
                     var area = spriteHash[areaId];
                     if (area) {
-                        for (var a in area) {
-                            var sprite = area[a];
+                        var props = Object.getOwnPropertyNames(area);
+                        for (var i = 0; i < props.length; i++) {
+                            var sprite = area[props[i]];
                             var obj = this.getSprite(sprite);
                             if (Array.isArray(obj)) {
                                 obj.forEach(callback);
@@ -178,8 +179,8 @@ define(['utils', 'spritesheet', 'spriteobject', 'camera'], function (Utils, Spri
             var area = spriteHash[areaId];
             array.length = 0;
             if (area) {
-                var props = area.getOwnPropertyNames();
-                for (var i = 0; i < pros.length; i++) {
+                var props = Object.getOwnPropertyNames(area);
+                for (var i = 0; i < props.length; i++) {
                     var sprite = area[props[i]];
                     if (Math.floor(sprite.x) === x && Math.floor(sprite.y) === y) {
                         array.push(sprite);

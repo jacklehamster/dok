@@ -20,6 +20,7 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
         this.imageCount = 0;
         this.mesh = createMesh(this);
         this.curvature = 0;
+        this.bigwave = 0;
 
         var self = this;
 
@@ -168,6 +169,12 @@ define(['threejs', 'utils', 'spriteobject', 'spritesheet', 'camera', 'turbosort'
                     type: "f",
                     get value() {
                         return performance.now() / 100;
+                    }
+                },
+                bigwave: {
+                    type: "f",
+                    get value() {
+                        return spriteRenderer.bigwave;
                     }
                 }
             },

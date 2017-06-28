@@ -178,8 +178,9 @@ define([
                         const areaId = getAreaHashIdWithArea(x,y);
                         const area = spriteHash[areaId];
                         if(area) {
-                            for(let a in area) {
-                                const sprite = area[a];
+                            const props = Object.getOwnPropertyNames(area);
+                            for(let i=0;i<props.length;i++) {
+                                const sprite = area[props[i]];
                                 const obj = this.getSprite(sprite);
                                 if(Array.isArray(obj)) {
                                     obj.forEach(callback);
@@ -202,8 +203,8 @@ define([
             const area = spriteHash[areaId];
             array.length = 0;
             if(area) {
-                const props = area.getOwnPropertyNames();
-                for(let i=0;i<pros.length;i++) {
+                const props = Object.getOwnPropertyNames(area);
+                for(let i=0;i<props.length;i++) {
                     const sprite = area[props[i]];
                     if(Math.floor(sprite.x)===x && Math.floor(sprite.y)===y) {
                         array.push(sprite);

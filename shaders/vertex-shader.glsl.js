@@ -12,6 +12,7 @@ varying float vLight;
 uniform vec3 vCam;
 uniform float curvature;
 uniform float time;
+uniform float bigwave;
 
 void main()  {
     vTex = tex;
@@ -25,7 +26,11 @@ void main()  {
         newPosition.z = newPosition.z - curvature * (dist*dist)/20000.0;
     }
     if (wave > 0.0) {
-        newPosition.z = newPosition.z + wave * sin(newPosition.x*5.0 - newPosition.y*7.0 + time);
+        newPosition.z = newPosition.z + wave * (sin(newPosition.x*15.0 + time/5.0) - cos(newPosition.y*7.0 + time/5.0));
+        if (bigwave > 0.0) {
+            newPosition.z = newPosition.z + wave * bigwave
+            * (sin(newPosition.x/500.0 + time/10.0) - sin(newPosition.y/700.0 + time/10.0));
+        }
     }
 
     vec4 mvPosition = modelViewMatrix * vec4(newPosition, 1.0 );

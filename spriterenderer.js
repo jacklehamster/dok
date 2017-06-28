@@ -27,6 +27,7 @@ define([
         this.imageCount = 0;
         this.mesh = createMesh(this);
         this.curvature = 0;
+        this.bigwave = 0;
 
         const self = this;
 
@@ -185,6 +186,10 @@ define([
                 time: {
                     type: "f",
                     get value() { return performance.now()/100; },
+                },
+                bigwave: {
+                    type: "f",
+                    get value() { return spriteRenderer.bigwave; },
                 },
             },
             vertexShader: Shader.vertexShader,

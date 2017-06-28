@@ -2158,7 +2158,7 @@ define('shaders/fragment-shader.glsl',[],function () {
 
 
 define('shaders/vertex-shader.glsl',[],function () {
-    return "\n    \nvarying vec2 vUv;\nattribute float tex;\nattribute float light;\nattribute float wave;\nattribute vec3 spot;\nattribute vec4 quaternion;\nvarying float vTex;\nvarying float vLight;\nuniform vec3 vCam;\nuniform float curvature;\nuniform float time;\n\nvoid main()  {\n    vTex = tex;\n    vUv = uv;\n\n    vec3 newPosition = rotateVectorByQuaternion( position - spot, quaternion ) + spot;\n    vLight = 1.0/ sqrt(500.0 / distance(newPosition, vCam)) * light;\n\n    float dist = distance(newPosition, vCam);\n    if (curvature > 0.0) {\n        newPosition.z = newPosition.z - curvature * (dist*dist)/20000.0;\n    }\n    if (wave > 0.0) {\n        newPosition.z = newPosition.z + wave * sin(newPosition.x*5.0 - newPosition.y*7.0 + time);\n    }\n\n    vec4 mvPosition = modelViewMatrix * vec4(newPosition, 1.0 );\n    gl_Position = projectionMatrix * mvPosition;\n}    \n\n    ";
+    return "\n    \nvarying vec2 vUv;\nattribute float tex;\nattribute float light;\nattribute float wave;\nattribute vec3 spot;\nattribute vec4 quaternion;\nvarying float vTex;\nvarying float vLight;\nuniform vec3 vCam;\nuniform float curvature;\nuniform float time;\nuniform float bigwave;\n\nvoid main()  {\n    vTex = tex;\n    vUv = uv;\n\n    vec3 newPosition = rotateVectorByQuaternion( position - spot, quaternion ) + spot;\n    vLight = 1.0/ sqrt(500.0 / distance(newPosition, vCam)) * light;\n\n    float dist = distance(newPosition, vCam);\n    if (curvature > 0.0) {\n        newPosition.z = newPosition.z - curvature * (dist*dist)/20000.0;\n    }\n    if (wave > 0.0) {\n        newPosition.z = newPosition.z + wave * (sin(newPosition.x*15.0 + time/5.0) - cos(newPosition.y*7.0 + time/5.0));\n        if (bigwave > 0.0) {\n            newPosition.z = newPosition.z + wave * bigwave\n            * (sin(newPosition.x/500.0 + time/10.0) - sin(newPosition.y/700.0 + time/10.0));\n        }\n    }\n\n    vec4 mvPosition = modelViewMatrix * vec4(newPosition, 1.0 );\n    gl_Position = projectionMatrix * mvPosition;\n}    \n\n    ";
 });
 //# sourceMappingURL=vertex-shader.glsl.js.map;
 
@@ -2198,6 +2198,7 @@ define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'cam
         this.imageCount = 0;
         this.mesh = createMesh(this);
         this.curvature = 0;
+        this.bigwave = 0;
 
         var self = this;
 
@@ -2346,6 +2347,12 @@ define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'cam
                     type: "f",
                     get value() {
                         return performance.now() / 100;
+                    }
+                },
+                bigwave: {
+                    type: "f",
+                    get value() {
+                        return spriteRenderer.bigwave;
                     }
                 }
             },
@@ -2744,8 +2751,9 @@ define('collection',['utils', 'spritesheet', 'spriteobject', 'camera'], function
                     var areaId = getAreaHashIdWithArea(_x2, _y2);
                     var area = spriteHash[areaId];
                     if (area) {
-                        for (var a in area) {
-                            var sprite = area[a];
+                        var props = Object.getOwnPropertyNames(area);
+                        for (var i = 0; i < props.length; i++) {
+                            var sprite = area[props[i]];
                             var obj = this.getSprite(sprite);
                             if (Array.isArray(obj)) {
                                 obj.forEach(callback);
@@ -2767,8 +2775,8 @@ define('collection',['utils', 'spritesheet', 'spriteobject', 'camera'], function
             var area = spriteHash[areaId];
             array.length = 0;
             if (area) {
-                var props = area.getOwnPropertyNames();
-                for (var i = 0; i < pros.length; i++) {
+                var props = Object.getOwnPropertyNames(area);
+                for (var i = 0; i < props.length; i++) {
                     var sprite = area[props[i]];
                     if (Math.floor(sprite.x) === x && Math.floor(sprite.y) === y) {
                         array.push(sprite);
@@ -2867,7 +2875,12 @@ define('mouse',['utils'], function (Utils) {
         e = e || event;
         var touches = e.changedTouches;
         if (!touches) {
-            var buttonDown = 'buttons' in e && e.buttons === 1 || (e.which || e.button) === 1;
+            var buttonDown = 'buttons' in e && e.buttons === 1 || e.button === 1;
+            if (buttonDown && !mdown) {
+                spot.x = e.pageX;
+                spot.y = e.pageY;
+                mdown = true;
+            }
 
             if (buttonDown && mdown) {
                 var newX = e.pageX;
@@ -2948,6 +2961,7 @@ define('mouse',['utils'], function (Utils) {
         element.addEventListener("mousemove", onMove);
         element.addEventListener("touchmove", onMove);
         element.addEventListener("wheel", onWheel);
+        element.addEventListener("mouseleave", onUp);
     }
 
     function deactivateTouch() {
@@ -2959,6 +2973,7 @@ define('mouse',['utils'], function (Utils) {
         element.removeEventListener("mousemove", onMove);
         element.removeEventListener("touchmove", onMove);
         element.removeEventListener("wheel", onWheel);
+        element.removeEventListener("mouseleave", onUp);
     }
 
     function setMainElement(elem) {
