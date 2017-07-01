@@ -2164,7 +2164,7 @@ define('shaders/fragment-shader.glsl', [], function () {
 
 
 define('shaders/vertex-shader.glsl', [], function () {
-    return "\n    \nvarying vec2 vUv;\nattribute float tex;\nattribute float light;\nattribute float wave;\nattribute vec3 spot;\nattribute vec4 quaternion;\nvarying float vTex;\nvarying float vLight;\nuniform vec3 vCam;\nuniform float curvature;\nuniform float time;\nuniform float bigwave;\n\nvoid main()  {\n    vTex = tex;\n    vUv = uv;\n\n    vec3 newPosition = rotateVectorByQuaternion( position - spot, quaternion ) + spot;\n    vLight = 1.0/ sqrt(500.0 / distance(newPosition, vCam)) * light;\n\n    float dist = distance(newPosition, vCam);\n    if (curvature > 0.0) {\n        newPosition.z = newPosition.z - curvature * (dist*dist)/20000.0;\n    }\n    if (wave > 0.0) {\n        newPosition.z = newPosition.z + wave * (sin(newPosition.x*15.0 + time/5.0) - cos(newPosition.y*7.0 + time/5.0));\n        if (bigwave > 0.0) {\n            newPosition.z = newPosition.z + wave * bigwave\n            * (sin(newPosition.x/500.0 + time/10.0) - sin(newPosition.y/700.0 + time/10.0));\n        }\n    }\n\n    vec4 mvPosition = modelViewMatrix * vec4(newPosition, 1.0 );\n    gl_Position = projectionMatrix * mvPosition;\n}    \n\n    ";
+    return "\n    \nvarying vec2 vUv;\nattribute float tex;\nattribute float light;\nattribute float wave;\nattribute vec3 spot;\nattribute vec4 quaternion;\nvarying float vTex;\nvarying float vLight;\nuniform vec3 vCam;\nuniform float curvature;\nuniform float time;\nuniform float bigwave;\n\nvoid main()  {\n    vTex = tex;\n    vUv = uv;\n\n    vec3 newPosition = rotateVectorByQuaternion( position - spot, quaternion ) + spot;\n    vLight = 1.0/ sqrt(500.0 / distance(newPosition, vCam)) * light;\n\n    float dist = distance(newPosition, vCam);\n    if (curvature > 0.0) {\n        newPosition.z = newPosition.z - curvature * (dist*dist)/20000.0;\n    }\n    if (wave > 0.0) {\n        newPosition.z = newPosition.z + wave * (sin(newPosition.x*15.0 + time/2.0) - cos(newPosition.y*7.0 + time/2.0));\n        if (bigwave > 0.0) {\n            newPosition.z = newPosition.z + wave * bigwave\n            * (sin(newPosition.x/500.0 + time/10.0) - sin(newPosition.y/700.0 + time/10.0));\n        }\n    }\n\n    vec4 mvPosition = modelViewMatrix * vec4(newPosition, 1.0 );\n    gl_Position = projectionMatrix * mvPosition;\n}    \n\n    ";
 });
 //# sourceMappingURL=vertex-shader.glsl.js.map;
 
@@ -3011,6 +3011,81 @@ define('mouse', ['utils'], function (Utils) {
 //# sourceMappingURL=mouse.js.map;
 
 
+define('keyboard', ['utils', 'loop'], function (Utils, Loop) {
+    'use strict';
+
+    var keyboard = [];
+
+    /**
+     *  FUNCTION DEFINITIONS
+     */
+    function destroyEverything() {
+        clearListeners();
+        keyboard = null;
+    }
+
+    function clearListeners() {
+        document.removeEventListener("keydown", handleKey);
+        document.removeEventListener("keyup", handleKey);
+    }
+
+    function addListeners() {
+        document.addEventListener("keydown", handleKey);
+        document.addEventListener("keyup", handleKey);
+    }
+
+    function handleKey(e) {
+        var keyCode = e.keyCode;
+        if (e.type === "keydown") {
+            if (!keyboard[keyCode]) {
+                keyboard[keyCode] = Loop.time;
+            }
+        } else {
+            keyboard[keyCode] = 0;
+        }
+        e.preventDefault();
+    }
+
+    function keyDown(key) {
+        return keyboard[key];
+    }
+
+    var mov = { x: 0, y: 0 };
+    function getMove() {
+        var dx = 0,
+            dy = 0;
+        if (keyDown(87) || keyDown(38)) {
+            dy++;
+        }
+        if (keyDown(83) || keyDown(40)) {
+            dy--;
+        }
+        if (keyDown(65) || keyDown(37)) {
+            dx--;
+        }
+        if (keyDown(68) || keyDown(39)) {
+            dx++;
+        }
+        mov.x = dx;
+        mov.y = dy;
+        return mov;
+    }
+
+    /**
+     *  PUBLIC DECLARATIONS
+     */
+    function Keyboard() {}
+
+    Keyboard.getMove = getMove;
+
+    addListeners();
+    Utils.onDestroy(destroyEverything);
+
+    return Keyboard;
+});
+//# sourceMappingURL=keyboard.js.map;
+
+
 define('engine', ['threejs', 'loader', 'loop', 'camera'], function (THREE, Loader, Loop, Camera) {
     function Engine(options) {
         var self = this;
@@ -3062,7 +3137,7 @@ define('engine', ['threejs', 'loader', 'loop', 'camera'], function (THREE, Loade
 //# sourceMappingURL=engine.js.map;
 
 
-define('dobuki', ['utils', 'loop', 'gifHandler', 'camera', 'objectpool', 'spriteobject', 'packer', 'spritesheet', 'spriterenderer', 'collection', 'mouse', 'loader', 'engine'], function (Utils, Loop, GifHandler, Camera, ObjectPool, SpriteObject, Packer, SpriteSheet, SpriteRenderer, Collection, Mouse, Loader, Engine) {
+define('dobuki', ['utils', 'loop', 'gifHandler', 'camera', 'objectpool', 'spriteobject', 'packer', 'spritesheet', 'spriterenderer', 'collection', 'mouse', 'keyboard', 'loader', 'engine'], function (Utils, Loop, GifHandler, Camera, ObjectPool, SpriteObject, Packer, SpriteSheet, SpriteRenderer, Collection, Mouse, Keyboard, Loader, Engine) {
 
     return {
         Utils: Utils,
@@ -3075,6 +3150,7 @@ define('dobuki', ['utils', 'loop', 'gifHandler', 'camera', 'objectpool', 'sprite
         SpriteRenderer: SpriteRenderer,
         Collection: Collection,
         Mouse: Mouse,
+        Keyboard: Keyboard,
         Loader: Loader,
         Engine: Engine
     };
