@@ -10,6 +10,7 @@ define([
     'spriterenderer',
     'collection',
     'mouse',
+    'keyboard',
     'loader',
     'engine',
 ], function(
@@ -24,6 +25,7 @@ define([
     SpriteRenderer,
     Collection,
     Mouse,
+    Keyboard,
     Loader,
     Engine,
 ) {
@@ -39,6 +41,7 @@ define([
         SpriteRenderer,
         Collection,
         Mouse,
+        Keyboard,
         Loader,
         Engine,
     };

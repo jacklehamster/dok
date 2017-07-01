@@ -8,7 +8,7 @@ define([ 'utils' ], function(Utils) {
 
     /**
      *  FUNCTION DEFINITIONS
-     */   
+     */
     function onDown(e)
     {
         if(e.target.attributes['tap']===undefined) {
@@ -36,7 +36,7 @@ define([ 'utils' ], function(Utils) {
         }
         e.preventDefault();
     }
-    
+
     function onUp(e) {
 
         var hasTouch = false;
@@ -59,7 +59,7 @@ define([ 'utils' ], function(Utils) {
         mdown = false;
         e.preventDefault();
     }
-    
+
     function onMove(e) {
         e = e || event;
         var touches = e.changedTouches;
@@ -176,7 +176,7 @@ define([ 'utils' ], function(Utils) {
         zoomCallbacks = [];
         deactivateTouch();
     }
-   
+
     /**
      *  PUBLIC DECLARATIONS
      */

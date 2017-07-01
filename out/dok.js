@@ -3005,6 +3005,81 @@ define('mouse',['utils'], function (Utils) {
 //# sourceMappingURL=mouse.js.map;
 
 
+define('keyboard',['utils', 'loop'], function (Utils, Loop) {
+    'use strict';
+
+    var keyboard = [];
+
+    /**
+     *  FUNCTION DEFINITIONS
+     */
+    function destroyEverything() {
+        clearListeners();
+        keyboard = null;
+    }
+
+    function clearListeners() {
+        document.removeEventListener("keydown", handleKey);
+        document.removeEventListener("keyup", handleKey);
+    }
+
+    function addListeners() {
+        document.addEventListener("keydown", handleKey);
+        document.addEventListener("keyup", handleKey);
+    }
+
+    function handleKey(e) {
+        var keyCode = e.keyCode;
+        if (e.type === "keydown") {
+            if (!keyboard[keyCode]) {
+                keyboard[keyCode] = Loop.time;
+            }
+        } else {
+            keyboard[keyCode] = 0;
+        }
+        e.preventDefault();
+    }
+
+    function keyDown(key) {
+        return keyboard[key];
+    }
+
+    var mov = { x: 0, y: 0 };
+    function getMove() {
+        var dx = 0,
+            dy = 0;
+        if (keyDown(87) || keyDown(38)) {
+            dy++;
+        }
+        if (keyDown(83) || keyDown(40)) {
+            dy--;
+        }
+        if (keyDown(65) || keyDown(37)) {
+            dx--;
+        }
+        if (keyDown(68) || keyDown(39)) {
+            dx++;
+        }
+        mov.x = dx;
+        mov.y = dy;
+        return mov;
+    }
+
+    /**
+     *  PUBLIC DECLARATIONS
+     */
+    function Keyboard() {}
+
+    Keyboard.getMove = getMove;
+
+    addListeners();
+    Utils.onDestroy(destroyEverything);
+
+    return Keyboard;
+});
+//# sourceMappingURL=keyboard.js.map;
+
+
 define('engine',['threejs', 'loader', 'loop', 'camera'], function (THREE, Loader, Loop, Camera) {
     function Engine(options) {
         var self = this;
@@ -3056,7 +3131,7 @@ define('engine',['threejs', 'loader', 'loop', 'camera'], function (THREE, Loader
 //# sourceMappingURL=engine.js.map;
 
 
-define('dobuki',['utils', 'loop', 'gifHandler', 'camera', 'objectpool', 'spriteobject', 'packer', 'spritesheet', 'spriterenderer', 'collection', 'mouse', 'loader', 'engine'], function (Utils, Loop, GifHandler, Camera, ObjectPool, SpriteObject, Packer, SpriteSheet, SpriteRenderer, Collection, Mouse, Loader, Engine) {
+define('dobuki',['utils', 'loop', 'gifHandler', 'camera', 'objectpool', 'spriteobject', 'packer', 'spritesheet', 'spriterenderer', 'collection', 'mouse', 'keyboard', 'loader', 'engine'], function (Utils, Loop, GifHandler, Camera, ObjectPool, SpriteObject, Packer, SpriteSheet, SpriteRenderer, Collection, Mouse, Keyboard, Loader, Engine) {
 
     return {
         Utils: Utils,
@@ -3069,6 +3144,7 @@ define('dobuki',['utils', 'loop', 'gifHandler', 'camera', 'objectpool', 'spriteo
         SpriteRenderer: SpriteRenderer,
         Collection: Collection,
         Mouse: Mouse,
+        Keyboard: Keyboard,
         Loader: Loader,
         Engine: Engine
     };
