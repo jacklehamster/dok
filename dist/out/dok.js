@@ -3043,7 +3043,7 @@ define('keyboard', ['utils', 'loop'], function (Utils, Loop) {
         } else {
             keyboard[keyCode] = 0;
         }
-        e.preventDefault();
+        //        e.preventDefault();
     }
 
     function keyDown(key) {

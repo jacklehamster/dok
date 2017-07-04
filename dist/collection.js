@@ -1,7 +1,6 @@
 'use strict';
 
 define(['utils', 'spritesheet', 'spriteobject', 'camera'], function (Utils, SpriteSheet, SpriteObject, Camera) {
-
     'use strict';
 
     function Collection(options, getSpriteFunction, forEach) {

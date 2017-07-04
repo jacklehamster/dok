@@ -4,7 +4,6 @@ define([
     'spriteobject',
     'camera',
 ], function(Utils, SpriteSheet, SpriteObject, Camera) {
-
     'use strict';
 
     function Collection(options, getSpriteFunction, forEach) {
@@ -93,7 +92,6 @@ define([
                 img
             )
         );
-
 
         return cubeFaces;
     }
