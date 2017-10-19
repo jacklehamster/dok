@@ -2597,7 +2597,6 @@ define('spriterenderer',['threejs', 'utils', 'spriteobject', 'spritesheet', 'cam
 
 
 define('collection',['utils', 'spritesheet', 'spriteobject', 'camera'], function (Utils, SpriteSheet, SpriteObject, Camera) {
-
     'use strict';
 
     function Collection(options, getSpriteFunction, forEach) {

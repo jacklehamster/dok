@@ -272,13 +272,15 @@ function( THREE,     Utils,   GifHandler,    Loader,   Packer) {
     }
 
     function preLoad(images,root) {
+        let result = 0, rootLoad = false;
         if(root===undefined) {
             root = SpriteSheet.spritesheet;
+            rootLoad = true;
         }
         if(typeof(images)==="string") {
             const cut = getCutByURL(images, 0);
             if(cut) {
-                return cut.index;
+                result = cut.index;
             }
         } else {
             for(let prop in images) {
@@ -292,8 +294,12 @@ function( THREE,     Utils,   GifHandler,    Loader,   Packer) {
                     }
                 }
             }
-            return root;
+            result = root;
         }
+        if (rootLoad) {
+            console.log('Images preloaded.', root);
+        }
+        return result;
     }
 
     function updateSpritesheetEvent(event) {

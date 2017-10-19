@@ -317,6 +317,7 @@ define(function() {
     Utils.getTitle = getTitle;
     Utils.makeArray = makeArray;
     Utils.nop = function(){};
+    Utils.log = console.log;
 
     /**
      *   PROCESSES
