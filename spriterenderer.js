@@ -128,6 +128,7 @@ define([
     SpriteRenderer.prototype.updateGraphics = updateGraphics;
     SpriteRenderer.prototype.clear = clear;
     SpriteRenderer.prototype.processGraphics = processGraphics;
+    SpriteRenderer.prototype.display = null;
 
     function SpriteImage() {
         this.position = new THREE.Vector3();
